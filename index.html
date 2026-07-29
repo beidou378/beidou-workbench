@@ -1,0 +1,1620 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>北斗星 工作台</title>
+<meta name="theme-color" content="#7c5cfc">
+<meta name="description" content="北斗星工作台：每日计划、新闻资讯、投资理财、文化学习、英语学习、财务记账、书签一站式平台">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="北斗星工作台">
+<meta name="mobile-web-app-capable" content="yes">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="apple-touch-icon.png?v=2">
+<link rel="apple-touch-icon-precomposed" href="apple-touch-icon.png?v=2">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+:root{--bg:#f7f6fc;--card:#fff;--line:#eae8f3;--text:#2a2a35;--sub:#8b8ba5;--accent:#7c5cfc;--accent-soft:#edeaff;--accent2:#a78bfa;--purple-light:#f3effd;--green:#34d399;--red:#f87171;--orange:#fb923c;--radius:18px;--shadow:0 3px 14px rgba(30,30,60,.07);--glow:0 0 20px rgba(30,30,60,.06);--topbar-h:52px}
+/* ====== 6 套简约清新配色（马卡龙轻卡通） ====== */
+[data-theme="mint"]{--bg:#f2faf7;--line:#dcefe6;--accent:#2fb98d;--accent-soft:#e0f6ee;--accent2:#6fd8b7;--purple-light:#eaf7f1;--sub:#8aa89c}
+[data-theme="peach"]{--bg:#fff6f9;--line:#f6dfe8;--accent:#f2739c;--accent-soft:#ffe7ef;--accent2:#ffa3c0;--purple-light:#ffeff4;--sub:#b193a0}
+[data-theme="sky"]{--bg:#f3f9ff;--line:#dcebf9;--accent:#3b9df5;--accent-soft:#e3f1ff;--accent2:#7cc4ff;--purple-light:#ecf5ff;--sub:#8fa5ba}
+[data-theme="lemon"]{--bg:#fffbef;--line:#f2e9cf;--accent:#ec9f19;--accent-soft:#fff2d6;--accent2:#ffc94d;--purple-light:#fff7e3;--sub:#af9f7e}
+[data-theme="coral"]{--bg:#fff7f4;--line:#f7e1d9;--accent:#ff7e5f;--accent-soft:#ffe9e2;--accent2:#ffab91;--purple-light:#ffefe9;--sub:#b39a90}
+.theme-dots{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0 10px}
+.theme-dot{width:22px;height:22px;border-radius:8px;cursor:pointer;border:2px solid transparent;transition:transform .18s cubic-bezier(.34,1.56,.64,1)}
+.theme-dot:hover{transform:scale(1.22) rotate(-8deg)}
+.theme-dot.active{border-color:var(--text);box-shadow:0 0 0 2px #fff inset;transform:scale(1.1)}
+/* ====== 书签卡片 ====== */
+.bm-card{display:flex;align-items:center;gap:12px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 16px;text-decoration:none;color:var(--text);box-shadow:var(--shadow);transition:all .18s;position:relative;min-width:0}
+.bm-card:hover{border-color:var(--accent);transform:translateY(-2px);box-shadow:0 6px 18px rgba(30,30,60,.1)}
+.bm-ico{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:17px;color:#fff;flex-shrink:0;background:linear-gradient(135deg,var(--accent),var(--accent2))}
+.bm-info{min-width:0;flex:1}
+.bm-info b{display:block;font-size:14px;margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bm-info span{font-size:11.5px;color:var(--sub);display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bm-tag{font-size:10.5px;padding:2px 8px;border-radius:8px;background:var(--accent-soft);color:var(--accent);flex-shrink:0;font-weight:600}
+.bm-del{position:absolute;top:4px;right:6px;color:var(--sub);font-size:12px;cursor:pointer;padding:4px;line-height:1}
+.bm-del:hover{color:var(--red)}
+*{margin:0;padding:0;box-sizing:border-box;font-family:'PingFang SC','Microsoft YaHei',system-ui,sans-serif}
+body{background:var(--bg);color:var(--text);font-size:14px;overflow:hidden}
+body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse at 10% 10%,rgba(124,92,252,.04) 0%,transparent 50%),radial-gradient(ellipse at 90% 90%,rgba(167,139,250,.04) 0%,transparent 50%);pointer-events:none;z-index:-1}
+.layout{display:flex;height:100vh;position:relative}
+.sidebar{width:218px;background:rgba(255,255,255,.82);backdrop-filter:blur(12px);border-right:1px solid var(--line);display:flex;flex-direction:column;flex-shrink:0;transition:width .25s ease,z-index 0s}
+/* 桌面折叠态：仅图标 */
+.sidebar.collapsed{width:70px}
+.sidebar.collapsed .logo span,.sidebar.collapsed .nav-item span,.sidebar.collapsed .side-foot{display:none}
+.sidebar.collapsed .logo{justify-content:center;padding:24px 8px 18px}
+.sidebar.collapsed .nav-item{justify-content:center;padding:11px 0}
+.sidebar.collapsed .nav-toggle{margin-left:0}
+.nav-toggle{margin-left:auto;width:26px;height:26px;border-radius:8px;background:#f0edf8;color:#8b8ba5;display:flex;align-items:center;justify-content:center;font-size:15px;line-height:1;flex-shrink:0;cursor:pointer}
+.nav-toggle:hover{background:var(--accent-soft);color:var(--accent)}
+.nav-toggle svg{width:16px;height:16px;stroke:#8b8ba5;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;transition:transform .25s}
+.sidebar.collapsed .nav-toggle svg{transform:rotate(180deg)}
+/* 移动端：顶部栏 + 抽屉 */
+.topbar{display:none}
+.nav-overlay{display:none;position:fixed;inset:0;background:rgba(20,18,35,.45);z-index:90;opacity:0;transition:opacity .25s}
+.nav-overlay.show{display:block;opacity:1}
+@media(max-width:760px){
+  .topbar{display:flex;align-items:center;gap:12px;height:var(--topbar-h);padding:0 14px;background:rgba(255,255,255,.92);backdrop-filter:blur(12px);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:80}
+  .topbar .menu-btn{width:38px;height:38px;border-radius:10px;background:var(--accent-soft);color:var(--accent);font-size:18px;display:flex;align-items:center;justify-content:center;flex-shrink:0;cursor:pointer}
+  .topbar .menu-btn svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+  .topbar-logo{display:flex;align-items:center;gap:9px;font-size:15px;font-weight:800;line-height:1.25}
+  .topbar-logo .icon{width:28px;height:28px;border-radius:9px;background:linear-gradient(135deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center;flex-shrink:0}
+  .nav-toggle{display:none}
+  .sidebar{position:fixed;top:0;left:0;bottom:0;width:min(82vw,260px);z-index:95;transform:translateX(-100%);transition:transform .28s ease;box-shadow:8px 0 28px rgba(20,18,35,.18)}
+  .sidebar.open{transform:translateX(0)}
+  .sidebar.collapsed{width:min(82vw,260px)}
+  .sidebar.collapsed .logo span,.sidebar.collapsed .nav-item span,.sidebar.collapsed .side-foot{display:initial}
+  .sidebar.collapsed .logo{justify-content:flex-start;padding:24px 20px 18px}
+  .sidebar.collapsed .nav-item{justify-content:flex-start;padding:11px 13px}
+  .layout{height:calc(100dvh - var(--topbar-h))}
+}
+.logo{padding:24px 20px 18px;font-size:16px;font-weight:800;display:flex;align-items:center;gap:10px;line-height:1.3}
+.logo .icon{width:30px;height:30px;border-radius:9px;background:linear-gradient(135deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center;color:#fff;flex-shrink:0;box-shadow:0 4px 12px rgba(124,92,252,.3)}
+.nav{flex:1;padding:8px 12px;overflow-y:auto}
+.nav-item{display:flex;align-items:center;gap:11px;padding:11px 13px;border-radius:12px;cursor:pointer;color:#6b6b80;margin-bottom:2px;transition:.2s;font-weight:500}
+.nav-item svg{width:17px;height:17px;stroke:#9b93c4;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}
+.nav-item:hover{background:var(--accent-soft);color:var(--accent)}
+.nav-item.active{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;box-shadow:var(--glow)}
+.nav-item.active svg{stroke:#fff}
+.side-foot{padding:16px 20px;font-size:11px;color:#b0aed0;border-top:1px solid var(--line);line-height:1.7}
+.main{flex:1;overflow-y:auto;overflow-x:hidden;padding:28px 36px 90px}
+.page{display:none;max-width:1000px;margin:0 auto}.page.active{display:block;animation:fade .3s ease}@media(max-width:760px){.main{padding:16px 12px 70px}.page{max-width:100%}.cul-grid{grid-template-columns:1fr}}
+@keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.page-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;gap:12px;flex-wrap:wrap}
+.page-head h2{font-size:22px;font-weight:800;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.page-head .sub{color:var(--sub);font-size:12px;margin-top:4px}
+.page-ico{width:44px;height:44px;border-radius:13px;background:linear-gradient(135deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center;color:#fff;flex-shrink:0;box-shadow:0 7px 18px rgba(124,92,252,.28);transition:transform .25s cubic-bezier(.34,1.56,.64,1)}
+.page-ico:hover{transform:rotate(-7deg) scale(1.06)}
+.page-ico svg{width:25px;height:25px;stroke:#fff;fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+.date-chip{background:linear-gradient(135deg,#fff,var(--purple-light));border:1px solid var(--line);border-radius:22px;padding:7px 16px;font-size:12px;color:var(--sub);font-weight:500}
+.card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:22px;margin-bottom:16px;border:1px solid var(--line);transition:transform .2s,box-shadow .2s}.card:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(30,30,60,.09)}
+.card h3{font-size:15px;margin-bottom:14px;display:flex;align-items:center;gap:8px;font-weight:700}
+.card h3::before{display:none}
+.h3-ico{width:28px;height:28px;border-radius:9px;background:linear-gradient(135deg,var(--accent),var(--accent2));display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 3px 10px rgba(124,92,252,.22)}
+.h3-ico svg{width:16px;height:16px;stroke:#fff;fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+.mini-ico{display:inline-flex;align-items:center;justify-content:center}
+.mini-ico svg{width:15px;height:15px;stroke:var(--accent);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px}.grid4{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px}
+button{cursor:pointer;border:none;border-radius:10px;font-size:13px;transition:.2s;font-weight:600}
+.btn{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;padding:10px 20px;box-shadow:0 4px 14px rgba(30,30,60,.18);transition:transform .18s cubic-bezier(.34,1.56,.64,1)}.btn:hover{transform:translateY(-2px) scale(1.03)}.btn:active{transform:scale(.96)}.btn:disabled{opacity:.45}
+.btn-ghost{background:var(--accent-soft);color:var(--accent);padding:8px 15px}.btn-ghost:hover{background:#ddd6ff}
+.btn-sm{padding:5px 13px;font-size:12px}
+.btn-refresh{background:linear-gradient(135deg,#fff,var(--purple-light));border:1px solid var(--line);color:var(--accent);padding:7px 16px;display:inline-flex;align-items:center;gap:6px;font-weight:600;border-radius:20px}.btn-refresh:hover{background:var(--accent-soft);border-color:var(--accent)}
+input[type=text],input[type=number],textarea,select{border:1.5px solid #e8e6f0;border-radius:10px;padding:10px 14px;font-size:13px;outline:none;background:#fafafe;color:var(--text);transition:.2s}
+input:focus,textarea:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(124,92,252,.1)}
+.tag{display:inline-block;padding:3px 10px;border-radius:7px;font-size:11px;font-weight:600}
+.muted{color:var(--sub);font-size:12px}.empty{color:#c4c2d8;text-align:center;padding:28px 0;font-size:13px}
+.progress-wrap{display:flex;align-items:center;gap:16px;margin-bottom:4px}
+.progress-bar{flex:1;height:10px;background:#efeef6;border-radius:6px;overflow:hidden}
+.progress-bar i{display:block;height:100%;background:linear-gradient(90deg,#a78bfa,var(--accent));border-radius:6px;transition:.4s;width:0}
+.todo-item{display:flex;align-items:center;gap:12px;padding:12px 10px;border-bottom:1px solid #f4f3f9}.todo-item:last-child{border-bottom:none}
+.todo-item input[type=checkbox]{width:18px;height:18px;accent-color:var(--accent);cursor:pointer}
+.todo-item .name{flex:1;font-size:14px}.todo-item.done .name{color:#c4c2d8;text-decoration:line-through}
+.todo-item .preset-tag{font-size:10px;color:var(--accent);background:var(--accent-soft);padding:2px 7px;border-radius:5px}
+.del-btn{background:none;color:#d0cee8;font-size:16px;padding:2px 8px;border-radius:6px}.del-btn:hover{background:#fce8ec;color:var(--red)}
+.add-row{display:flex;gap:10px;margin-top:14px;flex-wrap:wrap}.add-row input{flex:1;min-width:0}
+.ddl-tag{font-size:11px;padding:2px 8px;border-radius:5px;white-space:nowrap}
+.ddl-normal{background:#f4f3f9;color:#8b8ba5}.ddl-soon{background:#fef3e0;color:var(--orange);font-weight:600}.ddl-over{background:#fce8ec;color:var(--red);font-weight:600}
+.review-item{padding:12px 4px;border-bottom:1px solid #f4f3f9}.review-item:last-child{border:none}
+.review-item .d{font-size:11px;color:var(--sub);margin-bottom:5px;display:flex;justify-content:space-between}
+.review-item p{font-size:13px;line-height:1.8;white-space:pre-wrap;color:#3c404b}
+.filter-row{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;align-items:center}
+.chip{padding:7px 16px;border-radius:20px;background:var(--card);border:1.5px solid var(--line);font-size:12px;color:#6b6b80;cursor:pointer;font-weight:500;transition:.18s}
+.chip.on{background:linear-gradient(135deg,var(--accent),var(--accent2));border-color:var(--accent);color:#fff}
+/* ====== 新闻资讯卡片 ====== */
+.nsearch{margin-bottom:14px}.nsearch input{width:100%;padding:10px 16px;border:1.5px solid var(--line);border-radius:12px;background:var(--card);font-size:13.5px;color:var(--text);outline:none;transition:.2s;box-shadow:0 1px 4px rgba(30,30,60,.04)}.nsearch input:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.news-card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:18px 20px;margin-bottom:13px;border:1px solid var(--line);display:flex;gap:14px;align-items:flex-start;transition:transform .2s,box-shadow .2s;position:relative}
+.news-card:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(30,30,60,.09)}
+.news-rank{width:28px;height:28px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:#fff;flex-shrink:0;min-width:28px}
+.news-rank.t1{background:linear-gradient(135deg,#ff6b6b,#ee5a24)}
+.news-rank.t2{background:linear-gradient(135deg,#ffa502,#ff7f50)}
+.news-rank.t3{background:linear-gradient(135deg,#ffc048,#ffb142)}
+.news-rank.tx{background:linear-gradient(135deg,var(--accent),var(--accent2))}
+.news-body{flex:1;min-width:0}
+.news-cat{display:inline-flex;align-items:center;gap:5px;padding:2px 10px;border-radius:8px;font-size:11px;font-weight:600;margin-bottom:7px}
+.news-cat .ci{width:16px;height:16px;border-radius:5px;display:inline-flex;align-items:center;justify-content:center;color:#fff;font-size:10px}
+.news-title{font-size:15px;font-weight:700;line-height:1.55;margin-bottom:5px;color:var(--text)}
+.news-desc{font-size:12.5px;color:var(--sub);line-height:1.75}
+.news-more{margin-top:8px;font-size:12px;font-weight:700;color:var(--accent)}
+.news-read-meta{font-size:12.5px;color:var(--sub);line-height:1.7;margin-bottom:14px;padding-bottom:12px;border-bottom:1px dashed var(--line)}
+.news-star{flex-shrink:0;width:36px;height:36px;border-radius:50%;border:1.5px solid var(--line);display:flex;align-items:center;justify-content:center;cursor:pointer;color:#ccc;transition:.2s;background:var(--bg)}
+.news-star:hover{border-color:var(--accent);color:var(--accent)}
+.news-star.on{color:var(--orange);border-color:var(--orange);background:linear-gradient(135deg,#fff9f0,#fff3e0)}
+.sub-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-top:14px}.sub-cards.two{grid-template-columns:repeat(auto-fit,minmax(160px,1fr))}
+.sub-card{background:linear-gradient(135deg,#fafafe,var(--purple-light));border-radius:12px;padding:14px 15px;border:1px solid #f0edf8}
+.sub-card b{font-size:12px;display:block;margin-bottom:8px}.sub-card ul{padding-left:16px}.sub-card li{font-size:12px;color:#5a5a70;line-height:1.85}
+.notice{background:linear-gradient(135deg,#fffbf0,#fef8e8);border:1px solid #f5e3bd;color:#9a6b12;border-radius:12px;padding:12px 16px;font-size:12px;margin-bottom:16px;line-height:1.75}
+#ideaInput{width:100%;min-height:130px;resize:vertical;font-size:14px;line-height:1.8}
+.idea-item{padding:14px 4px;border-bottom:1px solid #f4f3f9}.idea-item:last-child{border:none}
+.idea-item .d{font-size:11px;color:var(--sub);margin-bottom:5px;display:flex;justify-content:space-between}
+.idea-item p{font-size:13px;line-height:1.8;white-space:pre-wrap}
+.search-row{display:flex;gap:10px;margin-bottom:14px}.search-row input{flex:1}
+.mkt-card{border-radius:14px;padding:16px 18px;background:var(--card);box-shadow:var(--shadow);border:1px solid rgba(124,92,252,.05)}
+.mkt-card .nm{font-size:12px;color:var(--sub)}.mkt-card .v{font-size:20px;font-weight:800;margin:5px 0 2px}.mkt-card .chg{font-size:12px;font-weight:700}
+.up{color:var(--red)}.down{color:var(--green)}
+.news-item{display:flex;gap:12px;padding:14px 4px;border-bottom:1px solid #f4f3f9;align-items:flex-start}.news-item:last-child{border:none}
+.news-item .t{font-size:11px;color:var(--sub);width:78px;flex-shrink:0;padding-top:2px}
+.news-item .bd{flex:1}.news-item .ttl{font-size:13.5px;font-weight:700;line-height:1.6}.news-item .sm{font-size:12px;color:#6a6f7d;margin-top:4px;line-height:1.75}
+.focus-hero{display:flex;justify-content:space-between;align-items:center;background:linear-gradient(135deg,#e8e0ff,#f0e6ff);border-radius:var(--radius);color:var(--text);padding:24px 28px;margin-bottom:18px;border:1px solid rgba(124,92,252,.1)}
+.focus-hero .g{font-size:18px;font-weight:800}.focus-hero .d{font-size:12px;color:var(--sub);margin-top:4px}
+.focus-timer-area{text-align:center;padding:30px 0}
+.timer-circle{width:200px;height:200px;border-radius:50%;margin:0 auto 24px;position:relative;display:flex;align-items:center;justify-content:center;flex-direction:column;background:conic-gradient(var(--accent) 0%,var(--accent) 0%,#efeef6 0%,#efeef6 100%);box-shadow:0 8px 32px rgba(124,92,252,.18),inset 0 2px 8px rgba(255,255,255,.6);transition:background .3s}
+.timer-inner{width:168px;height:168px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;flex-direction:column;position:absolute}
+.timer-display{font-size:42px;font-weight:800;color:var(--text);letter-spacing:2px;font-variant-numeric:tabular-nums}
+.timer-hint{font-size:12px;color:var(--sub);margin-top:2px}
+.timer-btns{display:flex;gap:12px;justify-content:center;margin-bottom:24px}.timer-btns button{padding:12px 30px;font-size:14px}
+.btn-focus-start{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;box-shadow:0 4px 14px rgba(124,92,252,.30)}.btn-focus-start:hover{transform:translateY(-1px)}
+.btn-focus-done{background:#fff;color:var(--accent);border:2px solid var(--accent)}.btn-focus-done:hover{background:var(--accent-soft)}
+.presets{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-bottom:16px}
+.preset-btn{padding:8px 20px;border-radius:20px;background:#fff;border:1.5px solid var(--line);color:#6b6b80;font-size:13px;cursor:pointer;font-weight:600;transition:.18s}
+.preset-btn.on{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;border-color:var(--accent)}
+.preset-btn:hover:not(.on){border-color:var(--accent);color:var(--accent)}
+.custom-time{display:flex;gap:8px;align-items:center;justify-content:center;margin-bottom:20px;font-size:13px;color:var(--sub)}.custom-time input{width:70px;text-align:center;font-weight:700}
+.focus-stats{text-align:center;font-size:14px;color:var(--sub);margin-bottom:18px}.focus-stats b{color:var(--accent);font-size:18px}
+.focus-tips{background:linear-gradient(135deg,#fffbeb,#fef9e8);border:1px solid #f5e3bd;border-radius:12px;padding:14px 18px;font-size:13px;line-height:1.8;color:#8a6b12}
+.habit-section{margin-top:8px}.habit-input{display:flex;gap:10px;margin-top:12px}.habit-input input{flex:1}
+.habit-list{margin-top:12px}.habit-item{display:flex;justify-content:space-between;align-items:center;padding:10px 8px;border-bottom:1px solid #f4f3f9;font-size:13px}.habit-item:last-child{border:none}
+.habit-check{width:22px;height:22px;border-radius:50%;border:2px solid #d0cee8;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;color:#fff;flex-shrink:0}.habit-check.done{background:linear-gradient(135deg,var(--accent),var(--accent2));border-color:transparent}
+.cul-tabs{display:flex;gap:14px;margin-bottom:16px;flex-wrap:wrap;align-items:flex-start}
+.cul-tab-group{display:flex;flex-direction:column;align-items:center;gap:7px}
+.cul-refresh{padding:4px 14px!important;font-size:12px!important;border-radius:14px}
+.cul-tab{padding:10px 24px;border:1.5px solid #e8e6f0;border-radius:30px;background:#fff;cursor:pointer;font-size:14px;font-weight:600;color:var(--sub);transition:.2s}
+.cul-tab:hover{border-color:var(--accent);color:var(--accent)}
+.cul-tab.active{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;border-color:var(--accent)}
+.cul-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}@media(max-width:680px){.cul-grid{grid-template-columns:1fr}}
+.cul-card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:18px 20px;transition:.2s;border:1px solid rgba(124,92,252,.06);position:relative}
+.cul-card:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(124,92,252,.12)}
+.cul-card .q{font-size:15.5px;line-height:1.85;font-weight:600;color:#2b2b33;font-family:'Kaiti SC','STKaiti','KaiTi',serif;white-space:pre-wrap;cursor:pointer}
+.cul-card .src{margin-top:10px;font-size:12px;color:var(--sub)}
+.cul-card .acts{margin-top:12px;display:flex;gap:8px;align-items:center;justify-content:space-between}
+.tts-btn{display:inline-flex;align-items:center;gap:6px;padding:7px 15px;border:1.5px solid #e8e6f0;border-radius:20px;background:#fafbff;cursor:pointer;font-size:12px;font-weight:600;color:var(--accent);transition:.16s}
+.tts-btn:hover{background:var(--accent-soft);border-color:var(--accent)}
+.tts-btn.speaking{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;border-color:var(--accent)}
+.learned-btn{padding:6px 14px;border-radius:16px;background:#fff;border:1.5px solid #e8e6f0;color:var(--sub);font-size:12px;cursor:pointer;font-weight:600;transition:.16s}
+.learned-btn:hover{border-color:var(--green);color:var(--green)}.learned-btn.done{background:#e4f6ec;color:var(--green);border-color:var(--green)}
+.cul-full{display:none;margin-top:12px;border-top:1px dashed #e8e6f0;padding-top:12px}.cul-full.show{display:block}
+.cul-full h4{font-size:13px;color:var(--accent);margin:12px 0 6px}.cul-full p{font-size:13px;color:#5a5a68;line-height:1.95;white-space:pre-wrap}
+.streak-box{display:flex;gap:14px;margin-bottom:16px;align-items:flex-end;flex-wrap:wrap}.streak-box .stat-mini{min-width:130px;flex:1}
+.stat-mini{flex:1;background:var(--card);border-radius:14px;box-shadow:var(--shadow);padding:16px 18px;border:1px solid rgba(124,92,252,.05)}
+.stat-mini .k{font-size:12px;color:var(--sub);display:flex;align-items:center;gap:6px}.stat-mini .v{font-size:21px;font-weight:800;margin-top:5px}
+.ledger-dash{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:14px;margin-bottom:16px}
+.ldg-form{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;align-items:center}
+.cat-manage{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.cat-pill{display:inline-flex;align-items:center;gap:6px;background:#f4f3f9;border-radius:16px;padding:5px 12px;font-size:12px}
+.cat-pill span{cursor:pointer;color:#d0cee8}.cat-pill span:hover{color:var(--red)}
+.ldg-item{display:flex;justify-content:space-between;align-items:center;padding:10px 4px;border-bottom:1px solid #f4f3f9;font-size:13px}.ldg-item:last-child{border:none}
+.amt-in{color:var(--red);font-weight:700}.amt-out{color:var(--text);font-weight:700}
+#voiceBtn.rec{background:var(--red);color:#fff;animation:pulse 1s infinite}@keyframes pulse{50%{opacity:.6}}
+.fab{position:fixed;right:28px;bottom:28px;width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;box-shadow:0 6px 24px rgba(30,30,60,.28);display:flex;align-items:center;justify-content:center;z-index:60;transition:transform .22s cubic-bezier(.34,1.56,.64,1)}.fab:hover{transform:scale(1.12) rotate(8deg)}
+.fab:hover{transform:scale(1.08) rotate(8deg)}.fab svg{width:24px;height:24px;stroke:#fff;fill:none;stroke-width:2;stroke-linecap:round}
+.modal-mask{position:fixed;inset:0;background:rgba(30,28,45,.35);backdrop-filter:blur(4px);display:none;align-items:center;justify-content:center;z-index:100}
+.modal-mask.show{display:flex}.modal{background:#fff;border-radius:18px;width:430px;max-width:92vw;max-height:82vh;overflow-y:auto;padding:26px;box-shadow:0 20px 60px rgba(0,0,0,.15)}
+.modal h3{font-size:17px;margin-bottom:18px;font-weight:800;display:flex;align-items:center;gap:9px}
+.ov-item{display:flex;align-items:center;gap:12px;padding:11px 2px;border-bottom:1px solid #f4f3f9;font-size:13.5px}.ov-item:last-child{border:none}
+.ov-dot{width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0}
+.ov-dot.ok{background:linear-gradient(135deg,#d1fae5,#a7f3d0);color:var(--green)}.ov-dot.no{background:#f4f3f9;color:#c4c2d8}
+.ov-ico{flex-shrink:0;width:26px;height:26px;border-radius:8px;background:linear-gradient(135deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(124,92,252,.2)}
+.ov-ico svg{width:15px;height:15px;stroke:#fff;fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+.ov-item .st{margin-left:auto;font-size:12px}.close-x{float:right;background:none;font-size:18px;color:#c4c2d8;padding:0 6px}
+.toast{position:fixed;top:24px;left:50%;transform:translateX(-50%);background:linear-gradient(135deg,#2a2a35,#3d3a52);color:#fff;padding:12px 24px;border-radius:12px;font-size:13px;z-index:200;display:none;box-shadow:0 12px 32px rgba(0,0,0,.2)}
+.toast.show{display:block;animation:fade .25s}
+/* ===== 月历视图 ===== */
+.cal{background:linear-gradient(135deg,#fff,var(--purple-light));border-radius:14px;padding:14px 16px}
+.cal-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.cal-head .m{font-weight:800;font-size:15px;color:var(--text)}
+.cal-nav{display:flex;gap:6px}
+.cal-nav button{width:30px;height:30px;border-radius:9px;background:#fff;border:1.5px solid var(--line);color:var(--accent);font-size:17px;font-weight:700;line-height:1}
+.cal-nav button:hover{background:var(--accent-soft)}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:5px}
+.cal-wd{text-align:center;font-size:11px;color:var(--sub);padding:4px 0;font-weight:600}
+.cal-d{position:relative;text-align:center;padding:9px 0 11px;border-radius:10px;cursor:pointer;font-size:13px;color:var(--text);transition:.15s;user-select:none}
+.cal-d:hover:not(.dim):not(.sel){background:var(--accent-soft)}
+.cal-d.dim{color:#d2d0e2;cursor:default}
+.cal-d.today{font-weight:800;color:var(--accent);background:var(--accent-soft)}
+.cal-d.sel{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;font-weight:700;box-shadow:var(--glow)}
+.cal-d .dot{position:absolute;bottom:4px;left:50%;transform:translateX(-50%);width:5px;height:5px;border-radius:50%;background:var(--accent)}
+.cal-d.sel .dot{background:#fff}
+.day-detail{margin-top:14px;border-top:1px dashed var(--line);padding-top:14px}
+.day-sec{margin-bottom:14px}
+.day-sec h4{font-size:13px;color:var(--accent);margin-bottom:8px;font-weight:700}
+.day-empty{color:#c4c2d8;font-size:13px;padding:6px 0}
+/* 爆款视频内联播放器 */
+.vp-wrap{margin-top:12px;border-radius:12px;overflow:hidden;border:1px solid var(--line);display:none}
+.vp-wrap.show{display:block}
+.vp-bar{display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:#fafafe;border-bottom:1px solid var(--line);font-size:12px;color:var(--sub)}
+.vp-bar button{background:var(--accent-soft);color:var(--accent);padding:4px 12px;border-radius:8px;font-size:12px}
+.vp-frame{width:100%;height:340px;border:none;background:#000}
+
+/* ===== 诗词搜索 ===== */
+.cul-search{margin-bottom:14px}
+/* ===== 书籍阅读器 ===== */
+.book-card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:18px 20px;transition:.2s;border:1px solid rgba(124,92,252,.06);display:flex;gap:14px;align-items:flex-start}
+.book-card:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(124,92,252,.12)}
+.book-cover{width:54px;height:72px;border-radius:8px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:26px;color:#fff;box-shadow:0 4px 12px rgba(124,92,252,.25)}
+.book-meta{flex:1;min-width:0}
+.book-meta .bt{font-size:15px;font-weight:700}
+.book-meta .ba{font-size:12px;color:var(--sub);margin:3px 0 6px}
+.book-meta .bc{font-size:11px;display:inline-block;padding:2px 9px;border-radius:6px;background:var(--accent-soft);color:var(--accent);font-weight:600;margin-bottom:6px}
+.book-meta .bi{font-size:12.5px;color:#5a5a68;line-height:1.7;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.book-prog{height:6px;background:#efeef6;border-radius:4px;overflow:hidden;margin:10px 0 6px}
+.book-prog i{display:block;height:100%;background:linear-gradient(90deg,#a78bfa,var(--accent));border-radius:4px;transition:.4s}
+.reader{max-height:74vh;overflow-y:auto}
+.reader .ch{margin-bottom:18px}
+.reader .ch h4{font-size:15px;color:var(--accent);margin-bottom:8px}
+.reader .ch p{font-size:14px;line-height:1.95;color:#3c404b;white-space:pre-wrap;margin-bottom:8px}
+.reader .rprog{display:flex;justify-content:space-between;align-items:center;margin:6px 0 14px;font-size:12px;color:var(--sub)}
+/* ===== 视频搜索 ===== */
+.vsearch{display:flex;gap:10px;margin-bottom:10px;flex-wrap:wrap}
+.vsearch input{flex:1;min-width:200px}
+.vsearch-btns{display:flex;gap:8px}
+/* ===== 股票 ===== */
+.stock-search{display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap}
+.stock-search input{flex:1;min-width:200px}
+.stock-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-bottom:16px}
+.stock-card{background:var(--card);border-radius:14px;box-shadow:var(--shadow);padding:14px 16px;border:1px solid rgba(124,92,252,.05);cursor:pointer;transition:.18s}
+.stock-card:hover{transform:translateY(-2px);box-shadow:0 8px 22px rgba(124,92,252,.12)}
+.stock-card .sn{font-size:15px;font-weight:700}
+.stock-card .sc{font-size:12px;color:var(--sub);margin-top:3px}
+.stock-card .si{font-size:11px;color:var(--accent);background:var(--accent-soft);padding:2px 8px;border-radius:6px;display:inline-block;margin-top:6px}
+.stock-detail .sd-h{font-size:18px;font-weight:800;margin-bottom:4px}
+.stock-detail .sd-sub{font-size:12px;color:var(--sub);margin-bottom:14px}
+.stock-detail .sd-sec{margin:14px 0}
+.stock-detail .sd-sec h4{font-size:13px;color:var(--accent);margin-bottom:6px}
+.stock-detail .sd-sec ul{padding-left:18px}
+.stock-detail .sd-sec li{font-size:13px;color:#4a4a58;line-height:1.9}
+/* ===== 英语学习 ===== */
+.en-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;gap:12px;flex-wrap:wrap}
+.en-word{background:linear-gradient(135deg,#fff,var(--purple-light));border-radius:var(--radius);box-shadow:var(--shadow);padding:26px 28px;border:1px solid rgba(124,92,252,.08);margin-bottom:16px;text-align:center}
+.en-word .ew{font-size:34px;font-weight:800;letter-spacing:1px}
+.en-word .ep{font-size:16px;color:var(--accent);margin:8px 0 4px;font-style:italic}
+.en-word .ec{font-size:14px;color:var(--sub)}
+.en-word .ex{margin-top:14px;font-size:14px;line-height:1.85;color:#3c404b;text-align:left}
+.en-word .ex b{color:var(--accent)}
+.en-acts{display:flex;gap:10px;justify-content:center;margin-top:16px;flex-wrap:wrap}
+.en-list{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+.en-item{background:var(--card);border-radius:14px;box-shadow:var(--shadow);padding:14px 16px;border:1px solid rgba(124,92,252,.05)}
+.en-item .ei-w{font-size:15px;font-weight:700}
+.en-item .ei-c{font-size:12.5px;color:#5a5a68;margin-top:4px;line-height:1.6}
+.en-item .ei-acts{display:flex;gap:8px;margin-top:10px;align-items:center}
+.en-mini{font-size:12px;color:#fff;background:var(--accent);border-radius:20px;padding:4px 12px;font-weight:600;cursor:pointer;border:none}
+.en-mini.off{background:#e8e6f0;color:#8b8ba5}
+@media(max-width:680px){.stock-grid,.en-list{grid-template-columns:1fr}}
+/* ====== PWA 原生模式适配 ====== */
+@media(display-mode:standalone),(display-mode:fullscreen){
+  html{overscroll-behavior:none}
+  ::-webkit-scrollbar{display:none}*{-ms-overflow-style:none;scrollbar-width:none}
+  #pwa-install-bar{display:none!important}
+  .fab{bottom:calc(28px + env(safe-area-inset-bottom))}
+}
+@media(max-width:760px) and (display-mode:standalone), (max-width:760px) and (display-mode:fullscreen){
+  .topbar{padding-top:env(safe-area-inset-top)}
+  .layout{height:calc(100dvh - var(--topbar-h) - env(safe-area-inset-top))}
+}
+</style>
+</head>
+<body>
+<header class="topbar" id="topbar">
+<button class="menu-btn" onclick="openDrawer()" aria-label="打开菜单"><svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
+<div class="topbar-logo"><div class="icon"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22v-7"/><path d="M9 22h6"/><path d="M12 15c-3 0-6-2-6-5.5C6 6 12 2 12 2s6 4 6 7.5c0 3.5-3 5.5-6 5.5z"/><path d="M12 8c-1.5 0-3-1-3-2.75C9 3 12 1 12 1s3 2 3 4.25C15 7 13.5 8 12 8z"/></svg></div><span>北斗星<br>工作台</span></div>
+</header>
+<div class="layout">
+<aside class="sidebar" id="sidebar">
+<div class="logo"><div class="icon"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22v-7"/><path d="M9 22h6"/><path d="M12 15c-3 0-6-2-6-5.5C6 6 12 2 12 2s6 4 6 7.5c0 3.5-3 5.5-6 5.5z"/><path d="M12 8c-1.5 0-3-1-3-2.75C9 3 12 1 12 1s3 2 3 4.25C15 7 13.5 8 12 8z"/></svg></div><span>北斗星<br>工作台</span><button class="nav-toggle" id="navToggle" onclick="toggleSidebar()" title="折叠/展开侧栏" aria-label="折叠侧栏"><svg viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></svg></button></div>
+<nav class="nav" id="nav"></nav>
+<div class="side-foot"><div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:2px">🎨 配色方案</div><div class="theme-dots" id="themeDots"></div><span style="display:block;color:var(--accent);cursor:pointer;font-size:12px;font-weight:700;margin-bottom:6px" onclick="if(window.showPwaGuide)showPwaGuide()">📲 安装到手机桌面</span>数据保存在本地浏览器<br>localStorage · 无云端上传</div>
+</aside>
+<main class="main" id="main">
+<!-- 1 每日计划 -->
+<section class="page" id="page-plan">
+<div class="page-head"><div><h2>每日计划</h2><div class="sub">预设任务每天 0 点自动重置生成</div></div><div class="date-chip" id="planDate"></div></div>
+<div class="card"><div class="progress-wrap"><div class="progress-bar"><i id="planBarFill"></i></div><b id="planProgressTxt" style="white-space:nowrap;font-size:14px">已完成 0/0 项</b></div></div>
+<div class="card"><h3>月历视图 <span class="muted">点击日期查看当日待办 / 工作任务 / 复盘</span></h3><div class="cal" id="planCal"></div><div id="planDayDetail"></div></div>
+<div class="card"><h3>今日待办</h3><div id="todoList"></div>
+<div class="add-row"><input type="text" id="newTaskInput" placeholder="输入自定义任务，回车或点击添加..." maxlength="40"><button class="btn" onclick="addTask()">添加任务</button></div></div>
+<div class="card"><h3>工作任务 <span class="muted" id="workStat"></span></h3><div id="workList"></div>
+<div class="add-row"><input type="text" id="workTaskInput" placeholder="输入工作任务..." maxlength="60" style="flex:1.6"><input type="date" id="workDdlInput" title="完成截止日期" style="border:1.5px solid #e8e6f0;border-radius:10px;padding:9px 13px;font-size:13px;color:var(--text)"><button class="btn" onclick="addWorkTask()">添加工作任务</button></div>
+<div class="muted" style="margin-top:8px">工作任务跨天保留，直到勾选完成；临期与逾期任务会高亮提示。</div></div>
+<div class="card"><h3>工作复盘 <span class="muted">每日一记</span></h3>
+<textarea id="reviewInput" placeholder="复盘今天的工作：做对了什么？哪里可以改进？明天最重要的一件事是什么？" style="width:100%;min-height:100px;resize:vertical;font-size:13.5px;line-height:1.8"></textarea>
+<div style="display:flex;justify-content:space-between;align-items:center;margin-top:12px"><span class="muted" id="reviewState"></span><button class="btn" onclick="saveReview()">保存今日复盘</button></div>
+<div id="reviewList" style="margin-top:14px"></div></div>
+</section>
+<!-- 2 新闻资讯 -->
+<section class="page" id="page-news">
+<div class="page-head"><div><h2>新闻资讯</h2><div class="sub">每日资讯精选，保持对世界的好奇心</div></div>
+<div style="display:flex;gap:10px;align-items:center"><button class="btn-refresh" onclick="renderNews()">🔄 刷新资讯</button><div class="date-chip" id="newsDate"></div></div></div>
+<div class="filter-row" id="newsFilters"></div>
+<div class="nsearch"><input type="text" id="newsKw" placeholder="🔍 搜索资讯标题或关键词" oninput="renderNews()"></div>
+<div id="newsList"></div>
+</section>
+<!-- 3 灵感记录 -->
+<section class="page" id="page-idea">
+<div class="page-head"><div><h2>灵感记录</h2><div class="sub">每日 20:00 未记录将自动提醒</div></div><div class="date-chip" id="ideaDate"></div></div>
+<div class="card"><h3>写下此刻的想法</h3><textarea id="ideaInput" placeholder="随手记录你的奇思妙想，支持多行文字..."></textarea>
+<div style="text-align:right;margin-top:12px"><button class="btn" onclick="saveIdea()">保存灵感</button></div></div>
+<div class="card"><h3>历史灵感 <span class="muted" id="ideaCount"></span></h3>
+<div class="search-row"><input type="text" id="ideaSearch" placeholder="🔍 输入关键字搜索灵感..." oninput="filterIdeas()"></div>
+<div style="margin:4px 0 14px"><div class="muted" style="margin-bottom:8px">📅 月历视图 · 有圆点的日期表示当天记录过灵感，点击日期查看详情</div><div class="cal" id="ideaCal"></div><div id="ideaDayDetail"></div></div>
+<div id="ideaList"></div></div>
+</section>
+<!-- 4 投资理财 -->
+<section class="page" id="page-invest">
+<div class="page-head"><div><h2>投资理财</h2><div class="sub">近 48 小时财经股票热点 · 市场动态与利好信息</div></div>
+<div style="display:flex;gap:10px;align-items:center"><button class="btn-refresh" onclick="refreshInvest()">🔄 刷新数据</button><div class="date-chip" id="investDate"></div></div></div>
+<div class="grid4" id="mktCards" style="margin-bottom:16px"></div>
+<div class="stock-search"><input type="text" id="stockKw" placeholder="🔍 搜索个股（名称 / 拼音 / 代码 / 行业），如：茅台、宁德、新能源、银行" oninput="renderStocks()"><button class="btn btn-sm" onclick="renderStocks()">搜索</button></div>
+<div id="stockList" class="stock-grid"></div>
+<div class="card" id="stockDetailCard" style="display:none"><div id="stockDetail"></div></div>
+<div class="notice">内置 30 条热点新闻,刷新后随机换序。点击条目跳转东方财富 / 新浪财经查看实时行情。</div>
+<div class="card"><h3>热点新闻动态</h3><div id="newsList"></div></div>
+</section>
+<!-- 5 专注计时 -->
+<section class="page" id="page-read">
+<div class="page-head"><div><h2>专注计时</h2><div class="sub">专注计时 · 劳逸结合</div></div>
+<div style="display:flex;gap:10px;align-items:center"><button class="btn-refresh" onclick="resetFocusTimer()">🔄 重置</button><div class="date-chip" id="readDate"></div></div></div>
+<div class="focus-hero"><div><div class="g">⏱ 专注计时 · 劳逸结合</div><div class="d" id="focusHeroTip">写下任务，开始专注吧</div></div><div style="font-size:32px;opacity:.2">⏰</div></div>
+<div class="card">
+<input type="text" id="focusTask" placeholder="这次准备专注做什么？" style="width:100%;font-size:15px;padding:14px 18px;margin-bottom:8px">
+<div class="focus-timer-area">
+<div class="timer-circle" id="timerCircle"><div class="timer-inner"><div class="timer-display" id="timerDisplay">00:00</div><div class="timer-hint" id="timerHint">写下任务，开始专注吧</div></div></div>
+<div class="timer-btns"><button class="btn-focus-start" id="btnStart" onclick="startFocus()">开始专注</button><button class="btn-focus-done" id="btnDone" onclick="doneFocus()">完成并记录</button></div>
+</div>
+<div style="text-align:center;color:var(--sub);font-size:13px;margin-bottom:6px">⏱ 学习多久后提醒我休息？（自选）</div>
+<div class="presets" id="focusPresets">
+<span class="preset-btn" data-min="30" onclick="setPreset(30,this)">30分钟</span>
+<span class="preset-btn on" data-min="60" onclick="setPreset(60,this)">1小时</span>
+<span class="preset-btn" data-min="90" onclick="setPreset(90,this)">1.5小时</span>
+<span class="preset-btn" data-min="120" onclick="setPreset(120,this)">2小时</span>
+</div>
+<div class="custom-time">或者自定义：每 <input type="number" id="customMin" min="1" max="480" value="30"> 分钟提醒我 <button class="btn btn-sm" onclick="applyCustomTime()">确定</button></div>
+<div class="focus-stats">今日已专注 <b id="focusTodayMin">0</b> 分钟 · 本周 <b id="focusWeekMin">0</b> 分钟</div>
+<div class="focus-tips">💡 <b>休息小贴士：</b> 👀 让眼睛休息：看看窗外远处20秒，绿色最好～<br>🧘 久坐提醒：站起来活动一下肩颈和腰部</div>
+</div>
+<div class="card habit-section">
+<h3>习惯打卡 <span class="muted" style="float:right;font-weight:400">坚持就是胜利 ✨</span></h3>
+<div class="habit-input"><input type="text" id="habitInput" placeholder="新建习惯，如：早起、冥想..."><button class="btn btn-sm" onclick="addHabit()">添加</button></div>
+<div class="habit-list" id="habitList"></div>
+</div>
+</section>
+<!-- 6 文化学习 -->
+<section class="page" id="page-culture">
+<div class="page-head"><div><h2>文化学习</h2><div class="sub">诗词 · 能量金句 · 优质书摘 · 毛选语句</div></div><div class="date-chip" id="cultureDate"></div></div>
+<div class="streak-box">
+<div class="stat-mini"><div class="k">今日状态</div><div class="v" id="cultureTodayState">未打卡</div></div>
+<div class="stat-mini"><div class="k">连续打卡</div><div class="v"><span id="cultureStreak">0</span> 天 🔥</div></div>
+<div class="stat-mini"><div class="k">累计学习</div><div class="v"><span id="cultureTotal">0</span> 条</div></div>
+<button class="btn" id="cultureCheckBtn" style="align-self:center" onclick="checkinCulture()">今日打卡</button>
+</div>
+<div class="cul-tabs" id="culTabs"></div>
+<div class="notice" id="cultureNotice"></div>
+<div class="search-row cul-search" id="poemSearchRow" style="display:none"><input type="text" id="poemSearch" placeholder="🔍 输入关键词搜索诗词，如：夏天 / 思乡 / 月亮 / 爱国 / 苏轼 / 李白" oninput="renderPoemList()"></div>
+<div id="cultureContent"></div>
+</section>
+<!-- 7 财务记账 -->
+<section class="page" id="page-ledger">
+<div class="page-head"><div><h2>财务记账</h2><div class="sub">支持手动与语音记账 · 数据本地留存</div></div><div class="date-chip" id="ledgerDate"></div></div>
+<div class="card"><h3>月历视图 <span class="muted">点击日期查看当日支出明细</span></h3><div class="cal" id="ledgerCal"></div><div id="ledgerDayDetail"></div></div>
+<div class="ledger-dash">
+<div class="stat-mini"><div class="k">本月支出</div><div class="v">¥<span id="dashMonth">0</span></div></div>
+<div class="stat-mini"><div class="k">今日支出</div><div class="v">¥<span id="dashToday">0</span></div></div>
+<div class="stat-mini"><div class="k">本年支出</div><div class="v">¥<span id="dashYear">0</span></div></div>
+<div class="stat-mini"><div class="k">本月消费笔数</div><div class="v"><span id="dashCount">0</span> 笔</div></div>
+</div>
+<div class="card"><h3>记一笔</h3>
+<div class="ldg-form">
+<select id="ldgType" onchange="fillCatOptions()"><option value="expense">支出</option><option value="income">收入</option></select>
+<select id="ldgCat"></select>
+<input type="number" id="ldgAmt" placeholder="金额" min="0" step="0.01">
+<input type="text" id="ldgNote" placeholder="备注（可选）">
+<button class="btn" onclick="addRecord()">记录</button>
+<button class="btn-ghost" id="voiceBtn" onclick="toggleVoice()" title="语音记账">语音</button>
+</div>
+<div class="muted" id="voiceHint" style="margin-top:8px"></div>
+<div class="cat-manage" id="catManage"></div>
+<div class="add-row" style="margin-top:10px;max-width:380px"><input type="text" id="newCatInput" placeholder="新增分类名称"><button class="btn-ghost" onclick="addCategory()">添加分类</button></div>
+</div>
+<div class="grid2">
+<div class="card"><h3>本月支出分类占比</h3>
+<div style="height:260px;position:relative"><canvas id="pieChart"></canvas><div class="empty" id="pieEmpty" style="display:none;position:absolute;inset:0;padding-top:100px">本月暂无支出记录</div></div>
+</div>
+<div class="card"><h3>最近流水</h3><div id="ldgList" style="max-height:260px;overflow-y:auto"></div></div>
+</div>
+</section>
+
+<!-- 9 英语学习 -->
+<section class="page" id="page-english">
+<div class="page-head"><div><h2>英语学习</h2><div class="sub">成人上班族 · 日常交流 + 外贸沟通场景</div></div><div style="display:flex;gap:10px;align-items:center"><button class="btn-refresh" onclick="resetEnWord()">🔄 换一个</button><div class="date-chip" id="enDate"></div></div></div>
+<div class="en-head">
+<div style="display:flex;gap:12px;flex:1;flex-wrap:wrap">
+<div class="stat-mini"><div class="k">连续打卡</div><div class="v"><span id="enStreak">0</span> 天 🔥</div></div>
+<div class="stat-mini"><div class="k">累计学习</div><div class="v"><span id="enTotal">0</span> 个词</div></div>
+<div class="stat-mini"><div class="k">已掌握</div><div class="v"><span id="enKnown">0</span> 个</div></div>
+</div>
+<button class="btn" id="enCheckBtn" onclick="checkinEnglish()">今日打卡</button>
+</div>
+<div class="filter-row" id="enFilters"></div>
+<div class="en-word" id="enWordBox"></div>
+<div class="en-list" id="enList"></div>
+</section>
+<!-- 8 书签 -->
+<section class="page" id="page-pro">
+<div class="page-head"><div><h2>书签</h2><div class="sub">财税办公常用网址导航 · 点击直达</div></div>
+<div class="date-chip" id="proDate"></div></div>
+<div class="card" style="margin-bottom:16px">
+<div class="add-row" style="margin-top:0">
+<input type="text" id="bmSearch" placeholder="🔍 搜索书签名称或关键词…" oninput="renderBookmarks()">
+</div>
+<div class="filter-row" id="bmCats" style="margin-top:10px"></div>
+</div>
+<div class="card" style="margin-bottom:16px">
+<h3>添加新书签</h3>
+<div class="add-row">
+<input type="text" id="bmName" placeholder="网址名称，如：河南省电子税务局">
+<input type="text" id="bmUrl" placeholder="链接地址，如：https://…">
+<button class="btn" onclick="addBookmark()">添加</button>
+</div>
+</div>
+<div class="stock-grid" id="bmList"></div>
+</section>
+</main>
+</div>
+<div class="nav-overlay" id="navOverlay" onclick="closeDrawer()"></div>
+<!-- 悬浮总览 -->
+<button class="fab" onclick="openOverview()" title="今日总览">
+<svg viewBox="0 0 24 24"><path d="M4 13h6V4H4zM14 20h6v-9h-6zM4 20h6v-4H4zM14 8h6V4h-6z"/></svg>
+</button>
+<div class="modal-mask" id="ovMask" onclick="if(event.target===this)this.classList.remove('show')">
+<div class="modal">
+<button class="close-x" onclick="document.getElementById('ovMask').classList.remove('show')">×</button>
+<h3>今日总览 · <span id="ovDate"></span></h3>
+<div id="ovList"></div>
+</div>
+</div>
+
+<div class="modal-mask" id="bookMask" onclick="if(event.target===this)closeBook()">
+<div class="modal reader">
+<button class="close-x" onclick="closeBook()">×</button>
+<h3 id="bookTitle"></h3>
+<div id="bookBody"></div>
+</div>
+</div>
+<div class="modal-mask" id="newsMask" onclick="if(event.target===this)closeNews()">
+<div class="modal reader">
+<button class="close-x" onclick="closeNews()">×</button>
+<div id="newsCat" class="news-cat"></div>
+<h3 id="newsTitle" style="margin:12px 0 8px;line-height:1.5;font-size:17px"></h3>
+<div id="newsMeta" class="news-read-meta"></div>
+<div id="newsBody"></div>
+</div>
+</div>
+<div class="toast" id="toast"></div>
+<!-- PWA 安装引导 -->
+<div id="pwa-install-bar" style="display:none;position:fixed;bottom:0;left:0;right:0;z-index:9999;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;padding:12px 16px;display:none;align-items:center;gap:10px;font-size:14px;box-shadow:0 -4px 20px rgba(30,30,60,.25);border-radius:16px 16px 0 0;">
+<span style="flex:1;">📱 将「北斗星工作台」添加到主屏幕，像原生APP一样使用</span>
+<button id="pwa-install-btn" style="background:#fff;color:var(--accent);border:none;padding:8px 18px;border-radius:20px;font-weight:700;cursor:pointer;font-size:13px;white-space:nowrap;" onclick="">立即安装</button>
+<button onclick="document.getElementById('pwa-install-bar').style.display='none'" style="background:rgba(255,255,255,.2);color:#fff;border:none;padding:6px 12px;border-radius:20px;cursor:pointer;font-size:12px;">稍后</button>
+</div>
+<script>
+const $=id=>document.getElementById(id);
+const todayStr=()=>{const d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");};
+const fmtCN=s=>{const[y,m,d]=s.split("-");return y+"年"+(+m)+"月"+(+d)+"日";};
+const LS={get(k,def){try{const v=localStorage.getItem("ws_"+k);return v?JSON.parse(v):def;}catch(e){return def;}},set(k,v){localStorage.setItem("ws_"+k,JSON.stringify(v));}};
+function toast(msg,ms=2800){const t=$("toast");t.textContent=msg;t.classList.add("show");clearTimeout(t._tm);t._tm=setTimeout(()=>t.classList.remove("show"),ms);}
+function seedShuffle(arr,seed){const a=[...arr];let s=seed;for(let i=a.length-1;i>0;i--){s=(s*9301+49297)%233280;const j=Math.floor(s/233280*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+function daySeed(){const t=todayStr().replace(/-/g,"");return parseInt(t,10);}
+function esc(s){return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
+const PAGES=[
+{id:"plan",name:"每日计划",icon:'<svg viewBox="0 0 24 24"><path d="M9 11l3 3 8-8"/><path d="M20 12v7a2 2 0 01-2 2H6a2 2 0 01-2-2V5a2 2 0 012-2h9"/></svg>'},
+{id:"news",name:"新闻资讯",icon:'<svg viewBox="0 0 24 24"><path d="M4 4h16a1 1 0 011 1v14a1 1 0 01-1 1H4z"/><path d="M19 8h2a1 1 0 011 1v11"/><path d="M8 7h6M8 11h8M8 15h5"/></svg>'},
+{id:"idea",name:"灵感记录",icon:'<svg viewBox="0 0 24 24"><path d="M9 18h6M10 21h4M12 3a6 6 0 00-4 10.5c.8.7 1 1.5 1 2.5h6c0-1 .2-1.8 1-2.5A6 6 0 0012 3z"/></svg>'},
+{id:"invest",name:"投资理财",icon:'<svg viewBox="0 0 24 24"><path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/></svg>'},
+{id:"read",name:"专注计时",icon:'<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>'},
+{id:"culture",name:"文化学习",icon:'<svg viewBox="0 0 24 24"><path d="M12 3L2 8l10 5 10-5z"/><path d="M6 10v6c0 1.5 2.7 3 6 3s6-1.5 6-3v-6"/></svg>'},
+{id:"english",name:"英语学习",icon:'<svg viewBox="0 0 24 24"><path d="M3 5h9v14H3zM12 5h9v14h-9z"/></svg>'},
+{id:"ledger",name:"财务记账",icon:'<svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M8 4v5"/></svg>'},
+{id:"pro",name:"书签",icon:'<svg viewBox="0 0 24 24"><path d="M6 3h12a1 1 0 011 1v17l-7-4-7 4V4a1 1 0 011-1z"/></svg>'}
+];
+function buildNav(){$("nav").innerHTML=PAGES.map(p=>`<div class="nav-item" data-p="${p.id}" title="${p.name}" onclick="go('${p.id}')">${p.icon}<span>${p.name}</span></div>`).join("");}
+function go(id){closeDrawer();document.querySelectorAll(".page").forEach(e=>e.classList.remove("active"));document.querySelectorAll(".nav-item").forEach(e=>e.classList.toggle("active",e.dataset.p===id));$("page-"+id).classList.add("active");$("main").scrollTop=0;const viewed=LS.get("viewed",{});if(viewed.date!==todayStr()){viewed.date=todayStr();viewed.pages=[];}if(!viewed.pages.includes(id))viewed.pages.push(id);LS.set("viewed",viewed);if(id==="plan")renderPlanCal();if(id==="ledger")renderLedgerCal();if(id==="idea")renderIdeaCal();if(id==="culture")renderCulture();if(id==="pro")renderBookmarks();if(id==="news")renderNews();if(id==="english")renderEnglish();}
+/* ====== 配色方案 ====== */
+const THEMES=[
+ {id:"default",name:"香芋紫",c:"#7c5cfc"},
+ {id:"mint",name:"薄荷绿",c:"#2fb98d"},
+ {id:"peach",name:"蜜桃粉",c:"#f2739c"},
+ {id:"sky",name:"天空蓝",c:"#3b9df5"},
+ {id:"lemon",name:"柠檬黄",c:"#ec9f19"},
+ {id:"coral",name:"珊瑚橙",c:"#ff7e5f"}
+];
+function applyTheme(id){
+  const t=THEMES.find(x=>x.id===id)||THEMES[0];
+  if(t.id==="default")document.documentElement.removeAttribute("data-theme");
+  else document.documentElement.setAttribute("data-theme",t.id);
+  LS.set("theme",t.id);
+  const meta=document.querySelector('meta[name="theme-color"]');if(meta)meta.setAttribute("content",t.c);
+  renderThemeDots();
+}
+function renderThemeDots(){
+  const box=$("themeDots");if(!box)return;
+  const cur=LS.get("theme","default");
+  box.innerHTML=THEMES.map(t=>`<span class="theme-dot${t.id===cur?" active":""}" style="background:${t.c}" title="${t.name}" onclick="applyTheme('${t.id}');toast('已切换：${t.name}')"></span>`).join("");
+}
+/* 侧栏：桌面折叠 / 移动端抽屉 */
+function toggleSidebar(){const s=document.getElementById("sidebar");const c=s.classList.toggle("collapsed");LS.set("nav_collapsed",c);}
+function openDrawer(){document.getElementById("sidebar").classList.add("open");document.getElementById("navOverlay").classList.add("show");}
+function closeDrawer(){document.getElementById("sidebar").classList.remove("open");document.getElementById("navOverlay").classList.remove("show");}
+const PRESETS=["运动","阅读","英语学习","晚十点睡觉"];
+function loadPlan(){let plan=LS.get("plan",null);if(!plan||plan.date!==todayStr()){plan={date:todayStr(),tasks:PRESETS.map((n,i)=>({id:Date.now()+i,name:n,done:false,preset:true}))};LS.set("plan",plan);}return plan;}
+function renderPlan(){const plan=loadPlan();$("planDate").textContent=fmtCN(plan.date);const done=plan.tasks.filter(t=>t.done).length,total=plan.tasks.length;$("planProgressTxt").textContent=`已完成 ${done}/${total} 项`;$("planBarFill").style.width=(total?done/total*100:0)+"%";$("todoList").innerHTML=plan.tasks.length?plan.tasks.map(t=>`<div class="todo-item ${t.done?"done":""}"><input type="checkbox" ${t.done?"checked":""} onchange="toggleTask(${t.id})"><span class="name">${esc(t.name)}</span>${t.preset?'<span class="preset-tag">每日固定</span>':""}<button class="del-btn" onclick="delTask(${t.id})" title="删除">✕</button></div>`).join(""):'<div class="empty">今日暂无任务</div>';}
+function syncPlanHistory(){const p=loadPlan();const h=LS.get("planHistory",{});h[p.date]=p;LS.set("planHistory",h);}
+function getDayPlan(d){if(d===todayStr())return loadPlan();const h=LS.get("planHistory",{});return h[d]||{date:d,tasks:[]};}
+function toggleTask(id){const p=loadPlan();const t=p.tasks.find(x=>x.id===id);if(t){t.done=!t.done;LS.set("plan",p);syncPlanHistory();renderPlan();}}
+function delTask(id){const p=loadPlan();p.tasks=p.tasks.filter(x=>x.id!==id);LS.set("plan",p);syncPlanHistory();renderPlan();}
+function addTask(){const inp=$("newTaskInput");const v=inp.value.trim();if(!v){toast("请输入任务名称");return;}const p=loadPlan();p.tasks.push({id:Date.now(),name:v,done:false,preset:false});LS.set("plan",p);inp.value="";syncPlanHistory();renderPlan();}
+$("newTaskInput")?.addEventListener?.("keydown",e=>{if(e.key==="Enter")addTask();});
+function renderWork(){const list=LS.get("workTasks",[]);const undone=list.filter(t=>!t.done).length;$("workStat").textContent=list.length?`未完成 ${undone} / 共 ${list.length} 项`:"";const sorted=[...list].sort((a,b)=>{if(a.done!==b.done)return a.done?1:-1;if(!a.ddl&&!b.ddl)return b.id-a.id;if(!a.ddl)return 1;if(!b.ddl)return -1;return a.ddl.localeCompare(b.ddl);});
+$("workList").innerHTML=sorted.length?sorted.map(t=>{let tag="";if(t.ddl){const days=Math.round((new Date(t.ddl)-new Date(todayStr()))/86400000);let cls="ddl-normal",txt="截止 "+t.ddl.slice(5).replace("-","/");if(!t.done){if(days<0){cls="ddl-over";txt="已逾期 "+(-days)+" 天";}else if(days===0){cls="ddl-soon";txt="今天截止";}else if(days<=2){cls="ddl-soon";txt=days+" 天后截止";}}tag=`<span class="ddl-tag ${cls}">${txt}</span>`;}
+return `<div class="todo-item ${t.done?"done":""}"><input type="checkbox" ${t.done?"checked":""} onchange="toggleWork(${t.id})"><span class="name">${esc(t.name)}</span>${tag}<button class="del-btn" onclick="delWork(${t.id})" title="删除">✕</button></div>`;}).join(""):'<div class="empty">暂无工作任务，添加第一条吧</div>';}
+function addWorkTask(){const v=$("workTaskInput").value.trim();if(!v){toast("请输入工作任务内容");return;}const list=LS.get("workTasks",[]);list.push({id:Date.now(),name:v,ddl:$("workDdlInput").value||"",done:false,created:todayStr()});LS.set("workTasks",list);$("workTaskInput").value="";$("workDdlInput").value="";renderWork();}
+function toggleWork(id){const l=LS.get("workTasks",[]);const t=l.find(x=>x.id===id);if(t){t.done=!t.done;t.doneDate=t.done?todayStr():"";LS.set("workTasks",l);renderWork();}}
+function delWork(id){LS.set("workTasks",LS.get("workTasks",[]).filter(x=>x.id!==id));renderWork();}
+$("workTaskInput")?.addEventListener?.("keydown",e=>{if(e.key==="Enter")addWorkTask();});
+/* ===== 月历视图通用组件 ===== */
+const _cals={};
+function monthMatrix(y,m){const first=new Date(y,m,1);const startDow=first.getDay();const gridStart=new Date(y,m,1-startDow);const out=[];for(let w=0;w<6;w++){const row=[];for(let d=0;d<7;d++){const dt=new Date(gridStart);dt.setDate(gridStart.getDate()+w*7+d);row.push(dt);}out.push(row);}return out;}
+function fmtDate(dt){return dt.getFullYear()+"-"+String(dt.getMonth()+1).padStart(2,"0")+"-"+String(dt.getDate()).padStart(2,"0");}
+function buildCal(key){const c=_cals[key];const [yy,mm]=c.ym.split("-").map(Number);const mName=yy+"年"+(mm+1)+"月";const mat=monthMatrix(yy,mm);const today=todayStr();let html=`<div class="cal-head"><div class="cal-nav"><button onclick="calMove('${key}',-1)">‹</button></div><div class="m">${mName}</div><div class="cal-nav"><button onclick="calMove('${key}',1)">›</button></div></div><div class="cal-grid">`;html+=['日','一','二','三','四','五','六'].map(w=>`<div class="cal-wd">${w}</div>`).join("");mat.forEach(row=>row.forEach(dt=>{const ds=fmtDate(dt);const dim=dt.getMonth()!==mm;let cls="cal-d"+(dim?" dim":"")+(ds===today?" today":"")+(c.sel===ds?" sel":"");const dot=c.dotFn&&c.dotFn(ds)&&!dim?'<span class="dot"></span>':'';html+=`<div class="${cls}" onclick="calSelect('${key}','${ds}')">${dt.getDate()}${dot}</div>`;}));html+='</div>';$(c.id).innerHTML=html;}
+function calMove(key,dir){const c=_cals[key];let [yy,mm]=c.ym.split("-").map(Number);mm+=dir;if(mm<0){mm=11;yy--;}if(mm>11){mm=0;yy++;}c.ym=yy+"-"+mm;buildCal(key);}
+function calSelect(key,ds){const c=_cals[key];c.sel=ds;buildCal(key);c.onSelect(ds);}
+function calOpen(key,id,onSelect,dotFn,sel){_cals[key]={key,id,onSelect,dotFn,ym:(new Date().getFullYear()+"-"+(new Date().getMonth())),sel:sel||todayStr()};buildCal(key);}
+/* 每日计划 · 月历 */
+function planHasData(d){const h=LS.get("planHistory",{});const ph=h[d];const hasTodo=ph&&ph.tasks&&ph.tasks.length>0;const hasWork=LS.get("workTasks",[]).some(t=>t.created===d||(t.ddl&&t.ddl===d));const hasRev=LS.get("reviews",[]).some(r=>r.date===d);return hasTodo||hasWork||hasRev;}
+function renderPlanCal(){calOpen("plan","planCal",showPlanDay,planHasData);}
+function showPlanDay(d){
+  const p=getDayPlan(d);const isToday=d===todayStr();
+  let html=`<div class="day-detail">`;
+  html+=`<div class="day-sec"><h4>📋 ${fmtCN(d)} 待办事项 ${isToday?'<span class="muted" style="font-weight:400">（今日可在上方直接编辑）</span>':''}</h4>`;
+  html+= (p.tasks&&p.tasks.length)? p.tasks.map(t=>`<div class="todo-item ${t.done?"done":""}"><span style="width:18px;display:inline-block;text-align:center;color:${t.done?'var(--green)':'#cfcde0'}">${t.done?'✓':'○'}</span><span class="name">${esc(t.name)}</span>${t.preset?'<span class="preset-tag">每日固定</span>':''}</div>`).join("") : '<div class="day-empty">当天无待办记录</div>';
+  html+=`</div>`;
+  const wt=LS.get("workTasks",[]).filter(t=>t.created===d||(t.ddl&&t.ddl===d));
+  html+=`<div class="day-sec"><h4>💼 工作任务</h4>`;
+  html+= wt.length? wt.map(t=>{let tag="";if(t.ddl){const days=Math.round((new Date(t.ddl)-new Date(todayStr()))/86400000);let cls="ddl-normal",txt="截止 "+t.ddl.slice(5).replace("-","/");if(!t.done){if(days<0){cls="ddl-over";txt="已逾期 "+(-days)+" 天";}else if(days===0){cls="ddl-soon";txt="今天截止";}else if(days<=2){cls="ddl-soon";txt=days+" 天后截止";}}tag=`<span class="ddl-tag ${cls}">${txt}</span>`;}return `<div class="todo-item ${t.done?"done":""}"><span style="width:18px;display:inline-block;text-align:center;color:${t.done?'var(--green)':'#cfcde0'}">${t.done?'✓':'○'}</span><span class="name">${esc(t.name)}</span>${tag}</div>`;}).join("") : '<div class="day-empty">当天无工作任务</div>';
+  html+=`</div>`;
+  const rv=LS.get("reviews",[]).find(r=>r.date===d);
+  html+=`<div class="day-sec"><h4>📝 工作复盘</h4>`;
+  html+= rv? `<div class="review-item"><p>${esc(rv.text)}</p></div>` : '<div class="day-empty">当天无复盘记录</div>';
+  html+=`</div></div>`;
+  $("planDayDetail").innerHTML=html;
+}
+/* 财务记账 · 月历 */
+function ledgerHasData(d){return getLedger().records.some(r=>r.date===d);}
+function renderLedgerCal(){calOpen("ledger","ledgerCal",showLedgerDay,ledgerHasData);}
+function rerenderLedgerDay(){buildCal("ledger");showLedgerDay(_cals.ledger.sel);}
+function showLedgerDay(d){
+  const l=getLedger();const recs=l.records.filter(r=>r.date===d);
+  const exp=recs.filter(r=>r.type==="expense");const inc=recs.filter(r=>r.type==="income");
+  const expSum=exp.reduce((s,r)=>s+r.amt,0).toFixed(2);
+  const incSum=inc.reduce((s,r)=>s+r.amt,0).toFixed(2);
+  let html=`<div class="day-detail"><div class="day-sec"><h4>📅 ${fmtCN(d)} 收支明细</h4>`;
+  if(recs.length){
+    html+=`<div class="progress-wrap" style="margin-bottom:12px;gap:20px"><span class="muted">支出 <b style="color:var(--red)">¥${expSum}</b></span><span class="muted">收入 <b style="color:var(--green)">¥${incSum}</b></span><span class="muted">净额 <b style="color:${expSum-incSum>=0?'var(--red)':'var(--green)'}">${expSum-incSum>=0?'-':'+'}¥${Math.abs(expSum-incSum).toFixed(2)}</b></span></div>`;
+    html+= recs.slice().sort((a,b)=>b.id-a.id).map(r=>`<div class="ldg-item"><span class="muted" style="width:54px">${r.type==="income"?"收入":"支出"}</span><span class="tag" style="background:#f4f5f9;color:#555a68">${r.cat}</span><span style="flex:1;margin-left:10px" class="muted">${esc(r.note||"")}</span><span class="${r.type==="income"?"amt-in":"amt-out"}">${r.type==="income"?"+":"-"}¥${r.amt.toFixed(2)}</span><button class="del-btn" onclick="delRecord(${r.id});rerenderLedgerDay();">✕</button></div>`).join("");
+  } else html+='<div class="day-empty">当天无记账记录</div>';
+  html+=`</div></div>`;
+  $("ledgerDayDetail").innerHTML=html;
+}
+function renderReview(){const list=LS.get("reviews",[]);const today=list.find(r=>r.date===todayStr());if(today&&!$("reviewInput").value)$("reviewInput").value=today.text;$("reviewState").innerHTML=today?'<span class="tag" style="background:#d1fae5;color:var(--green)">今日已复盘</span>':'<span class="tag" style="background:#fef3e0;color:var(--orange)">今日还未复盘</span>';const history=list.filter(r=>r.date!==todayStr());$("reviewList").innerHTML=history.length?'<div class="muted" style="margin-bottom:6px">历史复盘</div>'+history.map(r=>`<div class="review-item"><div class="d"><span>${r.date}</span><button class="del-btn" onclick="delReview('${r.date}')" title="删除">✕</button></div><p>${esc(r.text)}</p></div>`).join(""):"";}
+function saveReview(){const v=$("reviewInput").value.trim();if(!v){toast("先写点复盘内容吧");return;}let list=LS.get("reviews",[]);list=list.filter(r=>r.date!==todayStr());list.unshift({date:todayStr(),text:v});LS.set("reviews",list);toast("今日复盘已保存");renderReview();}
+function delReview(date){LS.set("reviews",LS.get("reviews",[]).filter(r=>r.date!==date));renderReview();}
+
+const NEWS_DB=[{"cat":"航天科技","catI":"🚀","catBg":"linear-gradient(135deg,#667eea,#764ba2)","catC":"#fff","title":"神舟系列载人飞船再获重大突破","desc":"任务进展按计划推进，多项关键技术指标符合预期。","body":"神舟系列载人飞船再获重大突破。据相关方面介绍，多个分系统已完成在轨验证，数据回传正常。\n分析认为，为后续深空探测与空间站运营奠定坚实基础；更多常态化运营与商业化应用场景将陆续落地。"},{"cat":"航天科技","catI":"🚀","catBg":"linear-gradient(135deg,#667eea,#764ba2)","catC":"#fff","title":"商业航天发射频创新高","desc":"研制团队长期攻关，核心工艺取得突破。","body":"商业航天发射频创新高。据相关方面介绍，关键技术攻关取得阶段性成果，可靠性显著提升。\n分析认为，带动商业航天、卫星应用等产业链加速升级；国际合作与标准共建有望进一步拓展。"},{"cat":"航天科技","catI":"🚀","catBg":"linear-gradient(135deg,#667eea,#764ba2)","catC":"#fff","title":"深空探测计划公布新目标","desc":"官方发布信息，后续试验与发射安排已明确。","body":"深空探测计划公布新目标。据相关方面介绍，试验流程进一步优化，研制周期明显缩短。\n分析认为，提升我国空间基础设施的整体能力与自主可控水平；关键技术指标仍有持续迭代与降本空间。"},{"cat":"航天科技","catI":"🚀","catBg":"linear-gradient(135deg,#667eea,#764ba2)","catC":"#fff","title":"卫星互联网星座加速组网","desc":"产业链上下游协同效应逐步显现。","body":"卫星互联网星座加速组网。据相关方面介绍，多个分系统已完成在轨验证，数据回传正常。\n分析认为，为后续深空探测与空间站运营奠定坚实基础；更多常态化运营与商业化应用场景将陆续落地。"},{"cat":"航天科技","catI":"🚀","catBg":"linear-gradient(135deg,#667eea,#764ba2)","catC":"#fff","title":"可重复使用火箭完成垂直回收试验","desc":"任务进展按计划推进，多项关键技术指标符合预期。","body":"可重复使用火箭完成垂直回收试验。据相关方面介绍，关键技术攻关取得阶段性成果，可靠性显著提升。\n分析认为，带动商业航天、卫星应用等产业链加速升级；国际合作与标准共建有望进一步拓展。"},{"cat":"航天科技","catI":"🚀","catBg":"linear-gradient(135deg,#667eea,#764ba2)","catC":"#fff","title":"探月工程嫦娥七号任务获批立项","desc":"研制团队长期攻关，核心工艺取得突破。","body":"探月工程嫦娥七号任务获批立项。据相关方面介绍，试验流程进一步优化，研制周期明显缩短。\n分析认为，提升我国空间基础设施的整体能力与自主可控水平；关键技术指标仍有持续迭代与降本空间。"},{"cat":"航天科技","catI":"🚀","catBg":"linear-gradient(135deg,#667eea,#764ba2)","catC":"#fff","title":"空间站科学实验样品顺利返回地面","desc":"官方发布信息，后续试验与发射安排已明确。","body":"空间站科学实验样品顺利返回地面。据相关方面介绍，多个分系统已完成在轨验证，数据回传正常。\n分析认为，为后续深空探测与空间站运营奠定坚实基础；更多常态化运营与商业化应用场景将陆续落地。"},{"cat":"航天科技","catI":"🚀","catBg":"linear-gradient(135deg,#667eea,#764ba2)","catC":"#fff","title":"新一代载人飞船转入飞行验证阶段","desc":"产业链上下游协同效应逐步显现。","body":"新一代载人飞船转入飞行验证阶段。据相关方面介绍，关键技术攻关取得阶段性成果，可靠性显著提升。\n分析认为，带动商业航天、卫星应用等产业链加速升级；国际合作与标准共建有望进一步拓展。"},{"cat":"航天科技","catI":"🚀","catBg":"linear-gradient(135deg,#667eea,#764ba2)","catC":"#fff","title":"民营卫星公司完成一箭多星发射","desc":"任务进展按计划推进，多项关键技术指标符合预期。","body":"民营卫星公司完成一箭多星发射。据相关方面介绍，试验流程进一步优化，研制周期明显缩短。\n分析认为，提升我国空间基础设施的整体能力与自主可控水平；关键技术指标仍有持续迭代与降本空间。"},{"cat":"航天科技","catI":"🚀","catBg":"linear-gradient(135deg,#667eea,#764ba2)","catC":"#fff","title":"北斗三号全球组网服务能力再升级","desc":"研制团队长期攻关，核心工艺取得突破。","body":"北斗三号全球组网服务能力再升级。据相关方面介绍，多个分系统已完成在轨验证，数据回传正常。\n分析认为，为后续深空探测与空间站运营奠定坚实基础；更多常态化运营与商业化应用场景将陆续落地。"},{"cat":"航天科技","catI":"🚀","catBg":"linear-gradient(135deg,#667eea,#764ba2)","catC":"#fff","title":"火星采样返回任务转入方案设计","desc":"官方发布信息，后续试验与发射安排已明确。","body":"火星采样返回任务转入方案设计。据相关方面介绍，关键技术攻关取得阶段性成果，可靠性显著提升。\n分析认为，带动商业航天、卫星应用等产业链加速升级；国际合作与标准共建有望进一步拓展。"},{"cat":"航天科技","catI":"🚀","catBg":"linear-gradient(135deg,#667eea,#764ba2)","catC":"#fff","title":"近地小行星防御技术完成地面验证","desc":"产业链上下游协同效应逐步显现。","body":"近地小行星防御技术完成地面验证。据相关方面介绍，试验流程进一步优化，研制周期明显缩短。\n分析认为，提升我国空间基础设施的整体能力与自主可控水平；关键技术指标仍有持续迭代与降本空间。"},{"cat":"航天科技","catI":"🚀","catBg":"linear-gradient(135deg,#667eea,#764ba2)","catC":"#fff","title":"高分辨率对地观测卫星成功发射","desc":"任务进展按计划推进，多项关键技术指标符合预期。","body":"高分辨率对地观测卫星成功发射。据相关方面介绍，多个分系统已完成在轨验证，数据回传正常。\n分析认为，为后续深空探测与空间站运营奠定坚实基础；更多常态化运营与商业化应用场景将陆续落地。"},{"cat":"航天科技","catI":"🚀","catBg":"linear-gradient(135deg,#667eea,#764ba2)","catC":"#fff","title":"太空望远镜捕捉到遥远星系图像","desc":"研制团队长期攻关，核心工艺取得突破。","body":"太空望远镜捕捉到遥远星系图像。据相关方面介绍，关键技术攻关取得阶段性成果，可靠性显著提升。\n分析认为，带动商业航天、卫星应用等产业链加速升级；国际合作与标准共建有望进一步拓展。"},{"cat":"航天科技","catI":"🚀","catBg":"linear-gradient(135deg,#667eea,#764ba2)","catC":"#fff","title":"航天员出舱活动时长创历史新高","desc":"官方发布信息，后续试验与发射安排已明确。","body":"航天员出舱活动时长创历史新高。据相关方面介绍，试验流程进一步优化，研制周期明显缩短。\n分析认为，提升我国空间基础设施的整体能力与自主可控水平；关键技术指标仍有持续迭代与降本空间。"},{"cat":"航天科技","catI":"🚀","catBg":"linear-gradient(135deg,#667eea,#764ba2)","catC":"#fff","title":"火箭发动机重复使用次数刷新纪录","desc":"产业链上下游协同效应逐步显现。","body":"火箭发动机重复使用次数刷新纪录。据相关方面介绍，多个分系统已完成在轨验证，数据回传正常。\n分析认为，为后续深空探测与空间站运营奠定坚实基础；更多常态化运营与商业化应用场景将陆续落地。"},{"cat":"航天科技","catI":"🚀","catBg":"linear-gradient(135deg,#667eea,#764ba2)","catC":"#fff","title":"商业遥感卫星影像分辨率达亚米级","desc":"任务进展按计划推进，多项关键技术指标符合预期。","body":"商业遥感卫星影像分辨率达亚米级。据相关方面介绍，关键技术攻关取得阶段性成果，可靠性显著提升。\n分析认为，带动商业航天、卫星应用等产业链加速升级；国际合作与标准共建有望进一步拓展。"},{"cat":"航天科技","catI":"🚀","catBg":"linear-gradient(135deg,#667eea,#764ba2)","catC":"#fff","title":"空间站扩展舱段完成关键技术攻关","desc":"研制团队长期攻关，核心工艺取得突破。","body":"空间站扩展舱段完成关键技术攻关。据相关方面介绍，试验流程进一步优化，研制周期明显缩短。\n分析认为，提升我国空间基础设施的整体能力与自主可控水平；关键技术指标仍有持续迭代与降本空间。"},{"cat":"航天科技","catI":"🚀","catBg":"linear-gradient(135deg,#667eea,#764ba2)","catC":"#fff","title":"海上发射平台实现常态化运行","desc":"官方发布信息，后续试验与发射安排已明确。","body":"海上发射平台实现常态化运行。据相关方面介绍，多个分系统已完成在轨验证，数据回传正常。\n分析认为，为后续深空探测与空间站运营奠定坚实基础；更多常态化运营与商业化应用场景将陆续落地。"},{"cat":"航天科技","catI":"🚀","catBg":"linear-gradient(135deg,#667eea,#764ba2)","catC":"#fff","title":"卫星通信直连手机技术进入试用","desc":"产业链上下游协同效应逐步显现。","body":"卫星通信直连手机技术进入试用。据相关方面介绍，关键技术攻关取得阶段性成果，可靠性显著提升。\n分析认为，带动商业航天、卫星应用等产业链加速升级；国际合作与标准共建有望进一步拓展。"},{"cat":"航天科技","catI":"🚀","catBg":"linear-gradient(135deg,#667eea,#764ba2)","catC":"#fff","title":"可变形太阳翼在轨展开验证成功","desc":"任务进展按计划推进，多项关键技术指标符合预期。","body":"可变形太阳翼在轨展开验证成功。据相关方面介绍，试验流程进一步优化，研制周期明显缩短。\n分析认为，提升我国空间基础设施的整体能力与自主可控水平；关键技术指标仍有持续迭代与降本空间。"},{"cat":"航天科技","catI":"🚀","catBg":"linear-gradient(135deg,#667eea,#764ba2)","catC":"#fff","title":"月球科研站建设路线图正式发布","desc":"研制团队长期攻关，核心工艺取得突破。","body":"月球科研站建设路线图正式发布。据相关方面介绍，多个分系统已完成在轨验证，数据回传正常。\n分析认为，为后续深空探测与空间站运营奠定坚实基础；更多常态化运营与商业化应用场景将陆续落地。"},{"cat":"航天科技","catI":"🚀","catBg":"linear-gradient(135deg,#667eea,#764ba2)","catC":"#fff","title":"太空制造实验产出首批在轨样品","desc":"官方发布信息，后续试验与发射安排已明确。","body":"太空制造实验产出首批在轨样品。据相关方面介绍，关键技术攻关取得阶段性成果，可靠性显著提升。\n分析认为，带动商业航天、卫星应用等产业链加速升级；国际合作与标准共建有望进一步拓展。"},{"cat":"航天科技","catI":"🚀","catBg":"linear-gradient(135deg,#667eea,#764ba2)","catC":"#fff","title":"火箭燃料绿色替代方案完成试车","desc":"产业链上下游协同效应逐步显现。","body":"火箭燃料绿色替代方案完成试车。据相关方面介绍，试验流程进一步优化，研制周期明显缩短。\n分析认为，提升我国空间基础设施的整体能力与自主可控水平；关键技术指标仍有持续迭代与降本空间。"},{"cat":"航天科技","catI":"🚀","catBg":"linear-gradient(135deg,#667eea,#764ba2)","catC":"#fff","title":"微小卫星编队组网技术取得突破","desc":"任务进展按计划推进，多项关键技术指标符合预期。","body":"微小卫星编队组网技术取得突破。据相关方面介绍，多个分系统已完成在轨验证，数据回传正常。\n分析认为，为后续深空探测与空间站运营奠定坚实基础；更多常态化运营与商业化应用场景将陆续落地。"},{"cat":"航天科技","catI":"🚀","catBg":"linear-gradient(135deg,#667eea,#764ba2)","catC":"#fff","title":"深空测控网覆盖能力进一步增强","desc":"研制团队长期攻关，核心工艺取得突破。","body":"深空测控网覆盖能力进一步增强。据相关方面介绍，关键技术攻关取得阶段性成果，可靠性显著提升。\n分析认为，带动商业航天、卫星应用等产业链加速升级；国际合作与标准共建有望进一步拓展。"},{"cat":"航天科技","catI":"🚀","catBg":"linear-gradient(135deg,#667eea,#764ba2)","catC":"#fff","title":"商业航天员培训体系初步建成","desc":"官方发布信息，后续试验与发射安排已明确。","body":"商业航天员培训体系初步建成。据相关方面介绍，试验流程进一步优化，研制周期明显缩短。\n分析认为，提升我国空间基础设施的整体能力与自主可控水平；关键技术指标仍有持续迭代与降本空间。"},{"cat":"航天科技","catI":"🚀","catBg":"linear-gradient(135deg,#667eea,#764ba2)","catC":"#fff","title":"太空旅游亚轨道飞行完成验证","desc":"产业链上下游协同效应逐步显现。","body":"太空旅游亚轨道飞行完成验证。据相关方面介绍，多个分系统已完成在轨验证，数据回传正常。\n分析认为，为后续深空探测与空间站运营奠定坚实基础；更多常态化运营与商业化应用场景将陆续落地。"},{"cat":"航天科技","catI":"🚀","catBg":"linear-gradient(135deg,#667eea,#764ba2)","catC":"#fff","title":"空间碎片主动清除试验顺利开展","desc":"任务进展按计划推进，多项关键技术指标符合预期。","body":"空间碎片主动清除试验顺利开展。据相关方面介绍，关键技术攻关取得阶段性成果，可靠性显著提升。\n分析认为，带动商业航天、卫星应用等产业链加速升级；国际合作与标准共建有望进一步拓展。"},{"cat":"航天科技","catI":"🚀","catBg":"linear-gradient(135deg,#667eea,#764ba2)","catC":"#fff","title":"星间激光链路传输速率创新高","desc":"研制团队长期攻关，核心工艺取得突破。","body":"星间激光链路传输速率创新高。据相关方面介绍，试验流程进一步优化，研制周期明显缩短。\n分析认为，提升我国空间基础设施的整体能力与自主可控水平；关键技术指标仍有持续迭代与降本空间。"},{"cat":"人工智能","catI":"🤖","catBg":"linear-gradient(135deg,#11998e,#38ef7d)","catC":"#fff","title":"大模型推理能力持续进化","desc":"模型能力持续突破，落地场景不断扩展。","body":"大模型推理能力持续进化。据相关方面介绍，训练效率与推理成本同步优化，单位算力产出提升。\n分析认为，推动千行百业的智能化改造与效率提升；Agent 化与端侧部署将成为下一阶段主线。"},{"cat":"人工智能","catI":"🤖","catBg":"linear-gradient(135deg,#11998e,#38ef7d)","catC":"#fff","title":"AI Agent 走向多智能体协作","desc":"从实验室走向产业，应用价值加速释放。","body":"AI Agent 走向多智能体协作。据相关方面介绍，多模态理解与生成一致性显著改善。\n分析认为，重塑软件开发、内容生产与科研范式；监管与治理体系将随技术演进而完善。"},{"cat":"人工智能","catI":"🤖","catBg":"linear-gradient(135deg,#11998e,#38ef7d)","catC":"#fff","title":"端侧 AI 模型轻量化突破","desc":"开源与闭源生态共同繁荣，竞争加剧。","body":"端侧 AI 模型轻量化突破。据相关方面介绍，评测基准上的表现刷新，接近特定任务人类水平。\n分析认为，催生新职业与新产业，就业结构逐步变化；具身智能有望打通数字与物理世界。"},{"cat":"人工智能","catI":"🤖","catBg":"linear-gradient(135deg,#11998e,#38ef7d)","catC":"#fff","title":"AI 生成内容监管框架逐步完善","desc":"安全与对齐成为研发重点方向。","body":"AI 生成内容监管框架逐步完善。据相关方面介绍，训练效率与推理成本同步优化，单位算力产出提升。\n分析认为，推动千行百业的智能化改造与效率提升；Agent 化与端侧部署将成为下一阶段主线。"},{"cat":"人工智能","catI":"🤖","catBg":"linear-gradient(135deg,#11998e,#38ef7d)","catC":"#fff","title":"多模态模型在医疗影像诊断准确率提升","desc":"模型能力持续突破，落地场景不断扩展。","body":"多模态模型在医疗影像诊断准确率提升。据相关方面介绍，多模态理解与生成一致性显著改善。\n分析认为，重塑软件开发、内容生产与科研范式；监管与治理体系将随技术演进而完善。"},{"cat":"人工智能","catI":"🤖","catBg":"linear-gradient(135deg,#11998e,#38ef7d)","catC":"#fff","title":"智能体在软件工程任务通过率突破新门槛","desc":"从实验室走向产业，应用价值加速释放。","body":"智能体在软件工程任务通过率突破新门槛。据相关方面介绍，评测基准上的表现刷新，接近特定任务人类水平。\n分析认为，催生新职业与新产业，就业结构逐步变化；具身智能有望打通数字与物理世界。"},{"cat":"人工智能","catI":"🤖","catBg":"linear-gradient(135deg,#11998e,#38ef7d)","catC":"#fff","title":"大模型长上下文窗口扩展至百万级 token","desc":"开源与闭源生态共同繁荣，竞争加剧。","body":"大模型长上下文窗口扩展至百万级 token。据相关方面介绍，训练效率与推理成本同步优化，单位算力产出提升。\n分析认为，推动千行百业的智能化改造与效率提升；Agent 化与端侧部署将成为下一阶段主线。"},{"cat":"人工智能","catI":"🤖","catBg":"linear-gradient(135deg,#11998e,#38ef7d)","catC":"#fff","title":"具身智能机器人完成复杂抓取任务","desc":"安全与对齐成为研发重点方向。","body":"具身智能机器人完成复杂抓取任务。据相关方面介绍，多模态理解与生成一致性显著改善。\n分析认为，重塑软件开发、内容生产与科研范式；监管与治理体系将随技术演进而完善。"},{"cat":"人工智能","catI":"🤖","catBg":"linear-gradient(135deg,#11998e,#38ef7d)","catC":"#fff","title":"开源大模型生态加速繁荣","desc":"模型能力持续突破，落地场景不断扩展。","body":"开源大模型生态加速繁荣。据相关方面介绍，评测基准上的表现刷新，接近特定任务人类水平。\n分析认为，催生新职业与新产业，就业结构逐步变化；具身智能有望打通数字与物理世界。"},{"cat":"人工智能","catI":"🤖","catBg":"linear-gradient(135deg,#11998e,#38ef7d)","catC":"#fff","title":"AI 辅助药物研发缩短临床前周期","desc":"从实验室走向产业，应用价值加速释放。","body":"AI 辅助药物研发缩短临床前周期。据相关方面介绍，训练效率与推理成本同步优化，单位算力产出提升。\n分析认为，推动千行百业的智能化改造与效率提升；Agent 化与端侧部署将成为下一阶段主线。"},{"cat":"人工智能","catI":"🤖","catBg":"linear-gradient(135deg,#11998e,#38ef7d)","catC":"#fff","title":"视频生成模型分辨率与一致性提升","desc":"开源与闭源生态共同繁荣，竞争加剧。","body":"视频生成模型分辨率与一致性提升。据相关方面介绍，多模态理解与生成一致性显著改善。\n分析认为，重塑软件开发、内容生产与科研范式；监管与治理体系将随技术演进而完善。"},{"cat":"人工智能","catI":"🤖","catBg":"linear-gradient(135deg,#11998e,#38ef7d)","catC":"#fff","title":"大模型在金融风控场景规模化落地","desc":"安全与对齐成为研发重点方向。","body":"大模型在金融风控场景规模化落地。据相关方面介绍，评测基准上的表现刷新，接近特定任务人类水平。\n分析认为，催生新职业与新产业，就业结构逐步变化；具身智能有望打通数字与物理世界。"},{"cat":"人工智能","catI":"🤖","catBg":"linear-gradient(135deg,#11998e,#38ef7d)","catC":"#fff","title":"语音大模型实现方言零样本识别","desc":"模型能力持续突破，落地场景不断扩展。","body":"语音大模型实现方言零样本识别。据相关方面介绍，训练效率与推理成本同步优化，单位算力产出提升。\n分析认为，推动千行百业的智能化改造与效率提升；Agent 化与端侧部署将成为下一阶段主线。"},{"cat":"人工智能","catI":"🤖","catBg":"linear-gradient(135deg,#11998e,#38ef7d)","catC":"#fff","title":"智能编码助手渗透率达新高","desc":"从实验室走向产业，应用价值加速释放。","body":"智能编码助手渗透率达新高。据相关方面介绍，多模态理解与生成一致性显著改善。\n分析认为，重塑软件开发、内容生产与科研范式；监管与治理体系将随技术演进而完善。"},{"cat":"人工智能","catI":"🤖","catBg":"linear-gradient(135deg,#11998e,#38ef7d)","catC":"#fff","title":"世界模型在自动驾驶仿真中表现突出","desc":"开源与闭源生态共同繁荣，竞争加剧。","body":"世界模型在自动驾驶仿真中表现突出。据相关方面介绍，评测基准上的表现刷新，接近特定任务人类水平。\n分析认为，催生新职业与新产业，就业结构逐步变化；具身智能有望打通数字与物理世界。"},{"cat":"人工智能","catI":"🤖","catBg":"linear-gradient(135deg,#11998e,#38ef7d)","catC":"#fff","title":"AI 在数学竞赛基准逼近人类顶尖水平","desc":"安全与对齐成为研发重点方向。","body":"AI 在数学竞赛基准逼近人类顶尖水平。据相关方面介绍，训练效率与推理成本同步优化，单位算力产出提升。\n分析认为，推动千行百业的智能化改造与效率提升；Agent 化与端侧部署将成为下一阶段主线。"},{"cat":"人工智能","catI":"🤖","catBg":"linear-gradient(135deg,#11998e,#38ef7d)","catC":"#fff","title":"边缘侧小模型在离线场景表现稳健","desc":"模型能力持续突破，落地场景不断扩展。","body":"边缘侧小模型在离线场景表现稳健。据相关方面介绍，多模态理解与生成一致性显著改善。\n分析认为，重塑软件开发、内容生产与科研范式；监管与治理体系将随技术演进而完善。"},{"cat":"人工智能","catI":"🤖","catBg":"linear-gradient(135deg,#11998e,#38ef7d)","catC":"#fff","title":"大模型检索增强降低幻觉率","desc":"从实验室走向产业，应用价值加速释放。","body":"大模型检索增强降低幻觉率。据相关方面介绍，评测基准上的表现刷新，接近特定任务人类水平。\n分析认为，催生新职业与新产业，就业结构逐步变化；具身智能有望打通数字与物理世界。"},{"cat":"人工智能","catI":"🤖","catBg":"linear-gradient(135deg,#11998e,#38ef7d)","catC":"#fff","title":"多智能体协作完成端到端科研项目","desc":"开源与闭源生态共同繁荣，竞争加剧。","body":"多智能体协作完成端到端科研项目。据相关方面介绍，训练效率与推理成本同步优化，单位算力产出提升。\n分析认为，推动千行百业的智能化改造与效率提升；Agent 化与端侧部署将成为下一阶段主线。"},{"cat":"人工智能","catI":"🤖","catBg":"linear-gradient(135deg,#11998e,#38ef7d)","catC":"#fff","title":"AI 助教进入更多中小学课堂","desc":"安全与对齐成为研发重点方向。","body":"AI 助教进入更多中小学课堂。据相关方面介绍，多模态理解与生成一致性显著改善。\n分析认为，重塑软件开发、内容生产与科研范式；监管与治理体系将随技术演进而完善。"},{"cat":"人工智能","catI":"🤖","catBg":"linear-gradient(135deg,#11998e,#38ef7d)","catC":"#fff","title":"图文生成模型支持中文深度理解","desc":"模型能力持续突破，落地场景不断扩展。","body":"图文生成模型支持中文深度理解。据相关方面介绍，评测基准上的表现刷新，接近特定任务人类水平。\n分析认为，催生新职业与新产业，就业结构逐步变化；具身智能有望打通数字与物理世界。"},{"cat":"人工智能","catI":"🤖","catBg":"linear-gradient(135deg,#11998e,#38ef7d)","catC":"#fff","title":"智能体自主完成网页操作任务","desc":"从实验室走向产业，应用价值加速释放。","body":"智能体自主完成网页操作任务。据相关方面介绍，训练效率与推理成本同步优化，单位算力产出提升。\n分析认为，推动千行百业的智能化改造与效率提升；Agent 化与端侧部署将成为下一阶段主线。"},{"cat":"人工智能","catI":"🤖","catBg":"linear-gradient(135deg,#11998e,#38ef7d)","catC":"#fff","title":"大模型微调成本持续下降","desc":"开源与闭源生态共同繁荣，竞争加剧。","body":"大模型微调成本持续下降。据相关方面介绍，多模态理解与生成一致性显著改善。\n分析认为，重塑软件开发、内容生产与科研范式；监管与治理体系将随技术演进而完善。"},{"cat":"人工智能","catI":"🤖","catBg":"linear-gradient(135deg,#11998e,#38ef7d)","catC":"#fff","title":"AI 在法律文书生成通过合规审查","desc":"安全与对齐成为研发重点方向。","body":"AI 在法律文书生成通过合规审查。据相关方面介绍，评测基准上的表现刷新，接近特定任务人类水平。\n分析认为，催生新职业与新产业，就业结构逐步变化；具身智能有望打通数字与物理世界。"},{"cat":"人工智能","catI":"🤖","catBg":"linear-gradient(135deg,#11998e,#38ef7d)","catC":"#fff","title":"具身大模型实现多任务统一架构","desc":"模型能力持续突破，落地场景不断扩展。","body":"具身大模型实现多任务统一架构。据相关方面介绍，训练效率与推理成本同步优化，单位算力产出提升。\n分析认为，推动千行百业的智能化改造与效率提升；Agent 化与端侧部署将成为下一阶段主线。"},{"cat":"人工智能","catI":"🤖","catBg":"linear-gradient(135deg,#11998e,#38ef7d)","catC":"#fff","title":"开源社区推出万亿参数稀疏模型","desc":"从实验室走向产业，应用价值加速释放。","body":"开源社区推出万亿参数稀疏模型。据相关方面介绍，多模态理解与生成一致性显著改善。\n分析认为，重塑软件开发、内容生产与科研范式；监管与治理体系将随技术演进而完善。"},{"cat":"人工智能","catI":"🤖","catBg":"linear-gradient(135deg,#11998e,#38ef7d)","catC":"#fff","title":"AI 内容溯源水印成行业标配","desc":"开源与闭源生态共同繁荣，竞争加剧。","body":"AI 内容溯源水印成行业标配。据相关方面介绍，评测基准上的表现刷新，接近特定任务人类水平。\n分析认为，催生新职业与新产业，就业结构逐步变化；具身智能有望打通数字与物理世界。"},{"cat":"人工智能","catI":"🤖","catBg":"linear-gradient(135deg,#11998e,#38ef7d)","catC":"#fff","title":"智能体在游戏环境中展现规划能力","desc":"安全与对齐成为研发重点方向。","body":"智能体在游戏环境中展现规划能力。据相关方面介绍，训练效率与推理成本同步优化，单位算力产出提升。\n分析认为，推动千行百业的智能化改造与效率提升；Agent 化与端侧部署将成为下一阶段主线。"},{"cat":"人工智能","catI":"🤖","catBg":"linear-gradient(135deg,#11998e,#38ef7d)","catC":"#fff","title":"大模型助力科研文献自动综述","desc":"模型能力持续突破，落地场景不断扩展。","body":"大模型助力科研文献自动综述。据相关方面介绍，多模态理解与生成一致性显著改善。\n分析认为，重塑软件开发、内容生产与科研范式；监管与治理体系将随技术演进而完善。"},{"cat":"人工智能","catI":"🤖","catBg":"linear-gradient(135deg,#11998e,#38ef7d)","catC":"#fff","title":"端云协同推理框架降低时延","desc":"从实验室走向产业，应用价值加速释放。","body":"端云协同推理框架降低时延。据相关方面介绍，评测基准上的表现刷新，接近特定任务人类水平。\n分析认为，催生新职业与新产业，就业结构逐步变化；具身智能有望打通数字与物理世界。"},{"cat":"宏观经济","catI":"📊","catBg":"linear-gradient(135deg,#f093fb,#f5576c)","catC":"#fff","title":"制造业 PMI 连续回升","desc":"最新数据释放积极信号，内生动力增强。","body":"制造业 PMI 连续回升。据相关方面介绍，核心指标边际回暖，供需两端同步改善。\n分析认为，为全年经济平稳运行提供有力支撑；宏观政策将保持连续性与精准性。"},{"cat":"宏观经济","catI":"📊","catBg":"linear-gradient(135deg,#f093fb,#f5576c)","catC":"#fff","title":"消费市场温和复苏态势延续","desc":"政策协同发力，市场预期边际改善。","body":"消费市场温和复苏态势延续。据相关方面介绍，新动能产业保持较快增速，贡献度上升。\n分析认为，增强资本市场与居民部门的良性互动；扩内需与优结构仍是政策着力点。"},{"cat":"宏观经济","catI":"📊","catBg":"linear-gradient(135deg,#f093fb,#f5576c)","catC":"#fff","title":"外贸结构持续优化升级","desc":"结构持续优化，新动能加快积聚。","body":"外贸结构持续优化升级。据相关方面介绍，市场主体信心有所恢复，景气预期改善。\n分析认为，夯实高质量发展与就业稳定的基础；新质生产力有望成为增长新引擎。"},{"cat":"宏观经济","catI":"📊","catBg":"linear-gradient(135deg,#f093fb,#f5576c)","catC":"#fff","title":"房地产市场企稳信号增多","desc":"重点领域风险有序化解，韧性提升。","body":"房地产市场企稳信号增多。据相关方面介绍，核心指标边际回暖，供需两端同步改善。\n分析认为，为全年经济平稳运行提供有力支撑；宏观政策将保持连续性与精准性。"},{"cat":"宏观经济","catI":"📊","catBg":"linear-gradient(135deg,#f093fb,#f5576c)","catC":"#fff","title":"央行开展 MLF 操作维护流动性合理充裕","desc":"最新数据释放积极信号，内生动力增强。","body":"央行开展 MLF 操作维护流动性合理充裕。据相关方面介绍，新动能产业保持较快增速，贡献度上升。\n分析认为，增强资本市场与居民部门的良性互动；扩内需与优结构仍是政策着力点。"},{"cat":"宏观经济","catI":"📊","catBg":"linear-gradient(135deg,#f093fb,#f5576c)","catC":"#fff","title":"社融增量好于预期 信贷需求边际改善","desc":"政策协同发力，市场预期边际改善。","body":"社融增量好于预期 信贷需求边际改善。据相关方面介绍，市场主体信心有所恢复，景气预期改善。\n分析认为，夯实高质量发展与就业稳定的基础；新质生产力有望成为增长新引擎。"},{"cat":"宏观经济","catI":"📊","catBg":"linear-gradient(135deg,#f093fb,#f5576c)","catC":"#fff","title":"高技术制造业投资保持较快增长","desc":"结构持续优化，新动能加快积聚。","body":"高技术制造业投资保持较快增长。据相关方面介绍，核心指标边际回暖，供需两端同步改善。\n分析认为，为全年经济平稳运行提供有力支撑；宏观政策将保持连续性与精准性。"},{"cat":"宏观经济","catI":"📊","catBg":"linear-gradient(135deg,#f093fb,#f5576c)","catC":"#fff","title":"居民消费价格指数温和上涨","desc":"重点领域风险有序化解，韧性提升。","body":"居民消费价格指数温和上涨。据相关方面介绍，新动能产业保持较快增速，贡献度上升。\n分析认为，增强资本市场与居民部门的良性互动；扩内需与优结构仍是政策着力点。"},{"cat":"宏观经济","catI":"📊","catBg":"linear-gradient(135deg,#f093fb,#f5576c)","catC":"#fff","title":"工业生产者出厂价格降幅收窄","desc":"最新数据释放积极信号，内生动力增强。","body":"工业生产者出厂价格降幅收窄。据相关方面介绍，市场主体信心有所恢复，景气预期改善。\n分析认为，夯实高质量发展与就业稳定的基础；新质生产力有望成为增长新引擎。"},{"cat":"宏观经济","catI":"📊","catBg":"linear-gradient(135deg,#f093fb,#f5576c)","catC":"#fff","title":"服务业景气水平稳步提升","desc":"政策协同发力，市场预期边际改善。","body":"服务业景气水平稳步提升。据相关方面介绍，核心指标边际回暖，供需两端同步改善。\n分析认为，为全年经济平稳运行提供有力支撑；宏观政策将保持连续性与精准性。"},{"cat":"宏观经济","catI":"📊","catBg":"linear-gradient(135deg,#f093fb,#f5576c)","catC":"#fff","title":"就业形势总体稳定 城镇调查失业率回落","desc":"结构持续优化，新动能加快积聚。","body":"就业形势总体稳定 城镇调查失业率回落。据相关方面介绍，新动能产业保持较快增速，贡献度上升。\n分析认为，增强资本市场与居民部门的良性互动；扩内需与优结构仍是政策着力点。"},{"cat":"宏观经济","catI":"📊","catBg":"linear-gradient(135deg,#f093fb,#f5576c)","catC":"#fff","title":"新质生产力相关产业增势良好","desc":"重点领域风险有序化解，韧性提升。","body":"新质生产力相关产业增势良好。据相关方面介绍，市场主体信心有所恢复，景气预期改善。\n分析认为，夯实高质量发展与就业稳定的基础；新质生产力有望成为增长新引擎。"},{"cat":"宏观经济","catI":"📊","catBg":"linear-gradient(135deg,#f093fb,#f5576c)","catC":"#fff","title":"减税降费政策红利持续释放","desc":"最新数据释放积极信号，内生动力增强。","body":"减税降费政策红利持续释放。据相关方面介绍，核心指标边际回暖，供需两端同步改善。\n分析认为，为全年经济平稳运行提供有力支撑；宏观政策将保持连续性与精准性。"},{"cat":"宏观经济","catI":"📊","catBg":"linear-gradient(135deg,#f093fb,#f5576c)","catC":"#fff","title":"区域协调发展战略扎实推进","desc":"政策协同发力，市场预期边际改善。","body":"区域协调发展战略扎实推进。据相关方面介绍，新动能产业保持较快增速，贡献度上升。\n分析认为，增强资本市场与居民部门的良性互动；扩内需与优结构仍是政策着力点。"},{"cat":"宏观经济","catI":"📊","catBg":"linear-gradient(135deg,#f093fb,#f5576c)","catC":"#fff","title":"绿色低碳投资规模稳步扩大","desc":"结构持续优化，新动能加快积聚。","body":"绿色低碳投资规模稳步扩大。据相关方面介绍，市场主体信心有所恢复，景气预期改善。\n分析认为，夯实高质量发展与就业稳定的基础；新质生产力有望成为增长新引擎。"},{"cat":"宏观经济","catI":"📊","catBg":"linear-gradient(135deg,#f093fb,#f5576c)","catC":"#fff","title":"民营经济发展环境进一步优化","desc":"重点领域风险有序化解，韧性提升。","body":"民营经济发展环境进一步优化。据相关方面介绍，核心指标边际回暖，供需两端同步改善。\n分析认为，为全年经济平稳运行提供有力支撑；宏观政策将保持连续性与精准性。"},{"cat":"宏观经济","catI":"📊","catBg":"linear-gradient(135deg,#f093fb,#f5576c)","catC":"#fff","title":"数字经济增加值占 GDP 比重提升","desc":"最新数据释放积极信号，内生动力增强。","body":"数字经济增加值占 GDP 比重提升。据相关方面介绍，新动能产业保持较快增速，贡献度上升。\n分析认为，增强资本市场与居民部门的良性互动；扩内需与优结构仍是政策着力点。"},{"cat":"宏观经济","catI":"📊","catBg":"linear-gradient(135deg,#f093fb,#f5576c)","catC":"#fff","title":"跨境电商进出口保持较快增速","desc":"政策协同发力，市场预期边际改善。","body":"跨境电商进出口保持较快增速。据相关方面介绍，市场主体信心有所恢复，景气预期改善。\n分析认为，夯实高质量发展与就业稳定的基础；新质生产力有望成为增长新引擎。"},{"cat":"宏观经济","catI":"📊","catBg":"linear-gradient(135deg,#f093fb,#f5576c)","catC":"#fff","title":"固定资产投资结构继续改善","desc":"结构持续优化，新动能加快积聚。","body":"固定资产投资结构继续改善。据相关方面介绍，核心指标边际回暖，供需两端同步改善。\n分析认为，为全年经济平稳运行提供有力支撑；宏观政策将保持连续性与精准性。"},{"cat":"宏观经济","catI":"📊","catBg":"linear-gradient(135deg,#f093fb,#f5576c)","catC":"#fff","title":"市场主体信心指数有所回升","desc":"重点领域风险有序化解，韧性提升。","body":"市场主体信心指数有所回升。据相关方面介绍，新动能产业保持较快增速，贡献度上升。\n分析认为，增强资本市场与居民部门的良性互动；扩内需与优结构仍是政策着力点。"},{"cat":"宏观经济","catI":"📊","catBg":"linear-gradient(135deg,#f093fb,#f5576c)","catC":"#fff","title":"粮食产量再创新高 粮食安全稳固","desc":"最新数据释放积极信号，内生动力增强。","body":"粮食产量再创新高 粮食安全稳固。据相关方面介绍，市场主体信心有所恢复，景气预期改善。\n分析认为，夯实高质量发展与就业稳定的基础；新质生产力有望成为增长新引擎。"},{"cat":"宏观经济","catI":"📊","catBg":"linear-gradient(135deg,#f093fb,#f5576c)","catC":"#fff","title":"营商环境改革举措密集落地","desc":"政策协同发力，市场预期边际改善。","body":"营商环境改革举措密集落地。据相关方面介绍，核心指标边际回暖，供需两端同步改善。\n分析认为，为全年经济平稳运行提供有力支撑；宏观政策将保持连续性与精准性。"},{"cat":"宏观经济","catI":"📊","catBg":"linear-gradient(135deg,#f093fb,#f5576c)","catC":"#fff","title":"人民币跨境支付系统覆盖扩大","desc":"结构持续优化，新动能加快积聚。","body":"人民币跨境支付系统覆盖扩大。据相关方面介绍，新动能产业保持较快增速，贡献度上升。\n分析认为，增强资本市场与居民部门的良性互动；扩内需与优结构仍是政策着力点。"},{"cat":"宏观经济","catI":"📊","catBg":"linear-gradient(135deg,#f093fb,#f5576c)","catC":"#fff","title":"地方专项债发行使用进度加快","desc":"重点领域风险有序化解，韧性提升。","body":"地方专项债发行使用进度加快。据相关方面介绍，市场主体信心有所恢复，景气预期改善。\n分析认为，夯实高质量发展与就业稳定的基础；新质生产力有望成为增长新引擎。"},{"cat":"宏观经济","catI":"📊","catBg":"linear-gradient(135deg,#f093fb,#f5576c)","catC":"#fff","title":"全国统一大市场建设提速","desc":"最新数据释放积极信号，内生动力增强。","body":"全国统一大市场建设提速。据相关方面介绍，核心指标边际回暖，供需两端同步改善。\n分析认为，为全年经济平稳运行提供有力支撑；宏观政策将保持连续性与精准性。"},{"cat":"宏观经济","catI":"📊","catBg":"linear-gradient(135deg,#f093fb,#f5576c)","catC":"#fff","title":"居民可支配收入实际增速跑赢 GDP","desc":"政策协同发力，市场预期边际改善。","body":"居民可支配收入实际增速跑赢 GDP。据相关方面介绍，新动能产业保持较快增速，贡献度上升。\n分析认为，增强资本市场与居民部门的良性互动；扩内需与优结构仍是政策着力点。"},{"cat":"宏观经济","catI":"📊","catBg":"linear-gradient(135deg,#f093fb,#f5576c)","catC":"#fff","title":"制造业技术改造投资力度加大","desc":"结构持续优化，新动能加快积聚。","body":"制造业技术改造投资力度加大。据相关方面介绍，市场主体信心有所恢复，景气预期改善。\n分析认为，夯实高质量发展与就业稳定的基础；新质生产力有望成为增长新引擎。"},{"cat":"宏观经济","catI":"📊","catBg":"linear-gradient(135deg,#f093fb,#f5576c)","catC":"#fff","title":"服务业扩大开放试点扩容","desc":"重点领域风险有序化解，韧性提升。","body":"服务业扩大开放试点扩容。据相关方面介绍，核心指标边际回暖，供需两端同步改善。\n分析认为，为全年经济平稳运行提供有力支撑；宏观政策将保持连续性与精准性。"},{"cat":"宏观经济","catI":"📊","catBg":"linear-gradient(135deg,#f093fb,#f5576c)","catC":"#fff","title":"宏观政策逆周期调节精准有力","desc":"最新数据释放积极信号，内生动力增强。","body":"宏观政策逆周期调节精准有力。据相关方面介绍，新动能产业保持较快增速，贡献度上升。\n分析认为，增强资本市场与居民部门的良性互动；扩内需与优结构仍是政策着力点。"},{"cat":"宏观经济","catI":"📊","catBg":"linear-gradient(135deg,#f093fb,#f5576c)","catC":"#fff","title":"经济内生增长动能持续增强","desc":"政策协同发力，市场预期边际改善。","body":"经济内生增长动能持续增强。据相关方面介绍，市场主体信心有所恢复，景气预期改善。\n分析认为，夯实高质量发展与就业稳定的基础；新质生产力有望成为增长新引擎。"},{"cat":"国内时政","catI":"🏛","catBg":"linear-gradient(135deg,#fa709a,#fee140)","catC":"#333","title":"数字基础设施建设全面提速","desc":"相关部署落地见效，民生福祉持续提升。","body":"数字基础设施建设全面提速。据相关方面介绍，政策协同推进，基层执行路径更加清晰。\n分析认为，让群众就近享有更优质的公共服务；更多惠民举措将常态化、制度化。"},{"cat":"国内时政","catI":"🏛","catBg":"linear-gradient(135deg,#fa709a,#fee140)","catC":"#333","title":"绿色低碳转型政策加码","desc":"改革举措系统集成，治理效能增强。","body":"绿色低碳转型政策加码。据相关方面介绍，试点经验有序复制推广，覆盖面扩大。\n分析认为，提升社会治理的精细化与温度；数字政府建设迈向纵深。"},{"cat":"国内时政","catI":"🏛","catBg":"linear-gradient(135deg,#fa709a,#fee140)","catC":"#333","title":"教育数字化战略深入实施","desc":"公共服务均等化水平稳步提高。","body":"教育数字化战略深入实施。据相关方面介绍，数字化手段赋能，服务便捷度提升。\n分析认为，增强发展的平衡性、协调性与包容性；基层治理现代化水平持续提高。"},{"cat":"国内时政","catI":"🏛","catBg":"linear-gradient(135deg,#fa709a,#fee140)","catC":"#333","title":"养老服务体系建设提速","desc":"重点领域制度建设不断完善。","body":"养老服务体系建设提速。据相关方面介绍，政策协同推进，基层执行路径更加清晰。\n分析认为，让群众就近享有更优质的公共服务；更多惠民举措将常态化、制度化。"},{"cat":"国内时政","catI":"🏛","catBg":"linear-gradient(135deg,#fa709a,#fee140)","catC":"#333","title":"扩大内需战略举措持续落地","desc":"相关部署落地见效，民生福祉持续提升。","body":"扩大内需战略举措持续落地。据相关方面介绍，试点经验有序复制推广，覆盖面扩大。\n分析认为，提升社会治理的精细化与温度；数字政府建设迈向纵深。"},{"cat":"国内时政","catI":"🏛","catBg":"linear-gradient(135deg,#fa709a,#fee140)","catC":"#333","title":"乡村振兴战略取得新进展","desc":"改革举措系统集成，治理效能增强。","body":"乡村振兴战略取得新进展。据相关方面介绍，数字化手段赋能，服务便捷度提升。\n分析认为，增强发展的平衡性、协调性与包容性；基层治理现代化水平持续提高。"},{"cat":"国内时政","catI":"🏛","catBg":"linear-gradient(135deg,#fa709a,#fee140)","catC":"#333","title":"区域一体化发展规划印发","desc":"公共服务均等化水平稳步提高。","body":"区域一体化发展规划印发。据相关方面介绍，政策协同推进，基层执行路径更加清晰。\n分析认为，让群众就近享有更优质的公共服务；更多惠民举措将常态化、制度化。"},{"cat":"国内时政","catI":"🏛","catBg":"linear-gradient(135deg,#fa709a,#fee140)","catC":"#333","title":"营商环境优化条例正式实施","desc":"重点领域制度建设不断完善。","body":"营商环境优化条例正式实施。据相关方面介绍，试点经验有序复制推广，覆盖面扩大。\n分析认为，提升社会治理的精细化与温度；数字政府建设迈向纵深。"},{"cat":"国内时政","catI":"🏛","catBg":"linear-gradient(135deg,#fa709a,#fee140)","catC":"#333","title":"医疗保障制度改革稳步推进","desc":"相关部署落地见效，民生福祉持续提升。","body":"医疗保障制度改革稳步推进。据相关方面介绍，数字化手段赋能，服务便捷度提升。\n分析认为，增强发展的平衡性、协调性与包容性；基层治理现代化水平持续提高。"},{"cat":"国内时政","catI":"🏛","catBg":"linear-gradient(135deg,#fa709a,#fee140)","catC":"#333","title":"公共文化服务均等化水平提升","desc":"改革举措系统集成，治理效能增强。","body":"公共文化服务均等化水平提升。据相关方面介绍，政策协同推进，基层执行路径更加清晰。\n分析认为，让群众就近享有更优质的公共服务；更多惠民举措将常态化、制度化。"},{"cat":"国内时政","catI":"🏛","catBg":"linear-gradient(135deg,#fa709a,#fee140)","catC":"#333","title":"生态环境保护督察常态化","desc":"公共服务均等化水平稳步提高。","body":"生态环境保护督察常态化。据相关方面介绍，试点经验有序复制推广，覆盖面扩大。\n分析认为，提升社会治理的精细化与温度；数字政府建设迈向纵深。"},{"cat":"国内时政","catI":"🏛","catBg":"linear-gradient(135deg,#fa709a,#fee140)","catC":"#333","title":"法治政府建设纲要深入实施","desc":"重点领域制度建设不断完善。","body":"法治政府建设纲要深入实施。据相关方面介绍，数字化手段赋能，服务便捷度提升。\n分析认为，增强发展的平衡性、协调性与包容性；基层治理现代化水平持续提高。"},{"cat":"国内时政","catI":"🏛","catBg":"linear-gradient(135deg,#fa709a,#fee140)","catC":"#333","title":"食品安全全链条监管加强","desc":"相关部署落地见效，民生福祉持续提升。","body":"食品安全全链条监管加强。据相关方面介绍，政策协同推进，基层执行路径更加清晰。\n分析认为，让群众就近享有更优质的公共服务；更多惠民举措将常态化、制度化。"},{"cat":"国内时政","catI":"🏛","catBg":"linear-gradient(135deg,#fa709a,#fee140)","catC":"#333","title":"反诈专项行动成效显著","desc":"改革举措系统集成，治理效能增强。","body":"反诈专项行动成效显著。据相关方面介绍，试点经验有序复制推广，覆盖面扩大。\n分析认为，提升社会治理的精细化与温度；数字政府建设迈向纵深。"},{"cat":"国内时政","catI":"🏛","catBg":"linear-gradient(135deg,#fa709a,#fee140)","catC":"#333","title":"基层减负措施落地见效","desc":"公共服务均等化水平稳步提高。","body":"基层减负措施落地见效。据相关方面介绍，数字化手段赋能，服务便捷度提升。\n分析认为，增强发展的平衡性、协调性与包容性；基层治理现代化水平持续提高。"},{"cat":"国内时政","catI":"🏛","catBg":"linear-gradient(135deg,#fa709a,#fee140)","catC":"#333","title":"未成年人网络保护条例施行","desc":"重点领域制度建设不断完善。","body":"未成年人网络保护条例施行。据相关方面介绍，政策协同推进，基层执行路径更加清晰。\n分析认为，让群众就近享有更优质的公共服务；更多惠民举措将常态化、制度化。"},{"cat":"国内时政","catI":"🏛","catBg":"linear-gradient(135deg,#fa709a,#fee140)","catC":"#333","title":"政务服务一网通办覆盖扩大","desc":"相关部署落地见效，民生福祉持续提升。","body":"政务服务一网通办覆盖扩大。据相关方面介绍，试点经验有序复制推广，覆盖面扩大。\n分析认为，提升社会治理的精细化与温度；数字政府建设迈向纵深。"},{"cat":"国内时政","catI":"🏛","catBg":"linear-gradient(135deg,#fa709a,#fee140)","catC":"#333","title":"应急管理体系能力现代化建设加快","desc":"改革举措系统集成，治理效能增强。","body":"应急管理体系能力现代化建设加快。据相关方面介绍，数字化手段赋能，服务便捷度提升。\n分析认为，增强发展的平衡性、协调性与包容性；基层治理现代化水平持续提高。"},{"cat":"国内时政","catI":"🏛","catBg":"linear-gradient(135deg,#fa709a,#fee140)","catC":"#333","title":"城市更新行动稳步推进","desc":"公共服务均等化水平稳步提高。","body":"城市更新行动稳步推进。据相关方面介绍，政策协同推进，基层执行路径更加清晰。\n分析认为，让群众就近享有更优质的公共服务；更多惠民举措将常态化、制度化。"},{"cat":"国内时政","catI":"🏛","catBg":"linear-gradient(135deg,#fa709a,#fee140)","catC":"#333","title":"中医药传承创新发展提速","desc":"重点领域制度建设不断完善。","body":"中医药传承创新发展提速。据相关方面介绍，试点经验有序复制推广，覆盖面扩大。\n分析认为，提升社会治理的精细化与温度；数字政府建设迈向纵深。"},{"cat":"国内时政","catI":"🏛","catBg":"linear-gradient(135deg,#fa709a,#fee140)","catC":"#333","title":"全民健身公共服务体系完善","desc":"相关部署落地见效，民生福祉持续提升。","body":"全民健身公共服务体系完善。据相关方面介绍，数字化手段赋能，服务便捷度提升。\n分析认为，增强发展的平衡性、协调性与包容性；基层治理现代化水平持续提高。"},{"cat":"国内时政","catI":"🏛","catBg":"linear-gradient(135deg,#fa709a,#fee140)","catC":"#333","title":"志愿服务制度化常态化","desc":"改革举措系统集成，治理效能增强。","body":"志愿服务制度化常态化。据相关方面介绍，政策协同推进，基层执行路径更加清晰。\n分析认为，让群众就近享有更优质的公共服务；更多惠民举措将常态化、制度化。"},{"cat":"国内时政","catI":"🏛","catBg":"linear-gradient(135deg,#fa709a,#fee140)","catC":"#333","title":"社会信用体系进一步健全","desc":"公共服务均等化水平稳步提高。","body":"社会信用体系进一步健全。据相关方面介绍，试点经验有序复制推广，覆盖面扩大。\n分析认为，提升社会治理的精细化与温度；数字政府建设迈向纵深。"},{"cat":"国内时政","catI":"🏛","catBg":"linear-gradient(135deg,#fa709a,#fee140)","catC":"#333","title":"退役军人服务保障提质增效","desc":"重点领域制度建设不断完善。","body":"退役军人服务保障提质增效。据相关方面介绍，数字化手段赋能，服务便捷度提升。\n分析认为，增强发展的平衡性、协调性与包容性；基层治理现代化水平持续提高。"},{"cat":"国内时政","catI":"🏛","catBg":"linear-gradient(135deg,#fa709a,#fee140)","catC":"#333","title":"民族团结进步创建深化","desc":"相关部署落地见效，民生福祉持续提升。","body":"民族团结进步创建深化。据相关方面介绍，政策协同推进，基层执行路径更加清晰。\n分析认为，让群众就近享有更优质的公共服务；更多惠民举措将常态化、制度化。"},{"cat":"国内时政","catI":"🏛","catBg":"linear-gradient(135deg,#fa709a,#fee140)","catC":"#333","title":"营商环境国际排名稳步上升","desc":"改革举措系统集成，治理效能增强。","body":"营商环境国际排名稳步上升。据相关方面介绍，试点经验有序复制推广，覆盖面扩大。\n分析认为，提升社会治理的精细化与温度；数字政府建设迈向纵深。"},{"cat":"国内时政","catI":"🏛","catBg":"linear-gradient(135deg,#fa709a,#fee140)","catC":"#333","title":"数字政府建设迈向纵深","desc":"公共服务均等化水平稳步提高。","body":"数字政府建设迈向纵深。据相关方面介绍，数字化手段赋能，服务便捷度提升。\n分析认为，增强发展的平衡性、协调性与包容性；基层治理现代化水平持续提高。"},{"cat":"国内时政","catI":"🏛","catBg":"linear-gradient(135deg,#fa709a,#fee140)","catC":"#333","title":"安全生产治本攻坚行动开展","desc":"重点领域制度建设不断完善。","body":"安全生产治本攻坚行动开展。据相关方面介绍，政策协同推进，基层执行路径更加清晰。\n分析认为，让群众就近享有更优质的公共服务；更多惠民举措将常态化、制度化。"},{"cat":"国内时政","catI":"🏛","catBg":"linear-gradient(135deg,#fa709a,#fee140)","catC":"#333","title":"乡村振兴帮扶机制持续完善","desc":"相关部署落地见效，民生福祉持续提升。","body":"乡村振兴帮扶机制持续完善。据相关方面介绍，试点经验有序复制推广，覆盖面扩大。\n分析认为，提升社会治理的精细化与温度；数字政府建设迈向纵深。"},{"cat":"国内时政","catI":"🏛","catBg":"linear-gradient(135deg,#fa709a,#fee140)","catC":"#333","title":"基层治理现代化水平提升","desc":"改革举措系统集成，治理效能增强。","body":"基层治理现代化水平提升。据相关方面介绍，数字化手段赋能，服务便捷度提升。\n分析认为，增强发展的平衡性、协调性与包容性；基层治理现代化水平持续提高。"},{"cat":"前沿科研","catI":"🔬","catBg":"linear-gradient(135deg,#4facfe,#00f2fe)","catC":"#fff","title":"量子计算纠错取得新进展","desc":"基础研究与前沿探索取得新突破。","body":"量子计算纠错取得新进展。据相关方面介绍，实验装置性能提升，观测精度迈上新台阶。\n分析认为，为未来技术与产业变革埋下伏笔；多学科交叉将加速原创突破。"},{"cat":"前沿科研","catI":"🔬","catBg":"linear-gradient(135deg,#4facfe,#00f2fe)","catC":"#fff","title":"可控核聚变实验刷新运行纪录","desc":"实验验证了关键科学猜想，意义深远。","body":"可控核聚变实验刷新运行纪录。据相关方面介绍，关键材料与工艺取得突破，稳定性改善。\n分析认为，拓展人类认知边界，赋能重大需求；成果转化通道有望进一步打通。"},{"cat":"前沿科研","catI":"🔬","catBg":"linear-gradient(135deg,#4facfe,#00f2fe)","catC":"#fff","title":"脑机接口临床试验进展顺利","desc":"交叉融合催生新方法、新工具。","body":"脑机接口临床试验进展顺利。据相关方面介绍，理论模型得到实验印证，机制更清晰。\n分析认为，有望在能源、健康、信息等领域产生溢出效应；大科学装置与开放合作不可或缺。"},{"cat":"前沿科研","catI":"🔬","catBg":"linear-gradient(135deg,#4facfe,#00f2fe)","catC":"#fff","title":"mRNA 技术平台拓展至癌症疫苗","desc":"从0到1的原始创新持续涌现。","body":"mRNA 技术平台拓展至癌症疫苗。据相关方面介绍，实验装置性能提升，观测精度迈上新台阶。\n分析认为，为未来技术与产业变革埋下伏笔；多学科交叉将加速原创突破。"},{"cat":"前沿科研","catI":"🔬","catBg":"linear-gradient(135deg,#4facfe,#00f2fe)","catC":"#fff","title":"钙钛矿太阳能电池效率再创新高","desc":"基础研究与前沿探索取得新突破。","body":"钙钛矿太阳能电池效率再创新高。据相关方面介绍，关键材料与工艺取得突破，稳定性改善。\n分析认为，拓展人类认知边界，赋能重大需求；成果转化通道有望进一步打通。"},{"cat":"前沿科研","catI":"🔬","catBg":"linear-gradient(135deg,#4facfe,#00f2fe)","catC":"#fff","title":"人造子宫研究取得阶段性突破","desc":"实验验证了关键科学猜想，意义深远。","body":"人造子宫研究取得阶段性突破。据相关方面介绍，理论模型得到实验印证，机制更清晰。\n分析认为，有望在能源、健康、信息等领域产生溢出效应；大科学装置与开放合作不可或缺。"},{"cat":"前沿科研","catI":"🔬","catBg":"linear-gradient(135deg,#4facfe,#00f2fe)","catC":"#fff","title":"室温超导研究再现重要线索","desc":"交叉融合催生新方法、新工具。","body":"室温超导研究再现重要线索。据相关方面介绍，实验装置性能提升，观测精度迈上新台阶。\n分析认为，为未来技术与产业变革埋下伏笔；多学科交叉将加速原创突破。"},{"cat":"前沿科研","catI":"🔬","catBg":"linear-gradient(135deg,#4facfe,#00f2fe)","catC":"#fff","title":"基因编辑疗法获批进入临床","desc":"从0到1的原始创新持续涌现。","body":"基因编辑疗法获批进入临床。据相关方面介绍，关键材料与工艺取得突破，稳定性改善。\n分析认为，拓展人类认知边界，赋能重大需求；成果转化通道有望进一步打通。"},{"cat":"前沿科研","catI":"🔬","catBg":"linear-gradient(135deg,#4facfe,#00f2fe)","catC":"#fff","title":"固态电池量产工艺获得突破","desc":"基础研究与前沿探索取得新突破。","body":"固态电池量产工艺获得突破。据相关方面介绍，理论模型得到实验印证，机制更清晰。\n分析认为，有望在能源、健康、信息等领域产生溢出效应；大科学装置与开放合作不可或缺。"},{"cat":"前沿科研","catI":"🔬","catBg":"linear-gradient(135deg,#4facfe,#00f2fe)","catC":"#fff","title":"类脑计算芯片能效大幅提升","desc":"实验验证了关键科学猜想，意义深远。","body":"类脑计算芯片能效大幅提升。据相关方面介绍，实验装置性能提升，观测精度迈上新台阶。\n分析认为，为未来技术与产业变革埋下伏笔；多学科交叉将加速原创突破。"},{"cat":"前沿科研","catI":"🔬","catBg":"linear-gradient(135deg,#4facfe,#00f2fe)","catC":"#fff","title":"干细胞治疗神经退行性疾病显效","desc":"交叉融合催生新方法、新工具。","body":"干细胞治疗神经退行性疾病显效。据相关方面介绍，关键材料与工艺取得突破，稳定性改善。\n分析认为，拓展人类认知边界，赋能重大需求；成果转化通道有望进一步打通。"},{"cat":"前沿科研","catI":"🔬","catBg":"linear-gradient(135deg,#4facfe,#00f2fe)","catC":"#fff","title":"暗物质探测实验灵敏度提升","desc":"从0到1的原始创新持续涌现。","body":"暗物质探测实验灵敏度提升。据相关方面介绍，理论模型得到实验印证，机制更清晰。\n分析认为，有望在能源、健康、信息等领域产生溢出效应；大科学装置与开放合作不可或缺。"},{"cat":"前沿科研","catI":"🔬","catBg":"linear-gradient(135deg,#4facfe,#00f2fe)","catC":"#fff","title":"超材料实现新型隐身与调控","desc":"基础研究与前沿探索取得新突破。","body":"超材料实现新型隐身与调控。据相关方面介绍，实验装置性能提升，观测精度迈上新台阶。\n分析认为，为未来技术与产业变革埋下伏笔；多学科交叉将加速原创突破。"},{"cat":"前沿科研","catI":"🔬","catBg":"linear-gradient(135deg,#4facfe,#00f2fe)","catC":"#fff","title":"合成生物学产出可降解新材料","desc":"实验验证了关键科学猜想，意义深远。","body":"合成生物学产出可降解新材料。据相关方面介绍，关键材料与工艺取得突破，稳定性改善。\n分析认为，拓展人类认知边界，赋能重大需求；成果转化通道有望进一步打通。"},{"cat":"前沿科研","catI":"🔬","catBg":"linear-gradient(135deg,#4facfe,#00f2fe)","catC":"#fff","title":"人工光合作用产率显著提高","desc":"交叉融合催生新方法、新工具。","body":"人工光合作用产率显著提高。据相关方面介绍，理论模型得到实验印证，机制更清晰。\n分析认为，有望在能源、健康、信息等领域产生溢出效应；大科学装置与开放合作不可或缺。"},{"cat":"前沿科研","catI":"🔬","catBg":"linear-gradient(135deg,#4facfe,#00f2fe)","catC":"#fff","title":"高精度原子钟刷新稳定度纪录","desc":"从0到1的原始创新持续涌现。","body":"高精度原子钟刷新稳定度纪录。据相关方面介绍，实验装置性能提升，观测精度迈上新台阶。\n分析认为，为未来技术与产业变革埋下伏笔；多学科交叉将加速原创突破。"},{"cat":"前沿科研","catI":"🔬","catBg":"linear-gradient(135deg,#4facfe,#00f2fe)","catC":"#fff","title":"微生物组研究揭示代谢新机制","desc":"基础研究与前沿探索取得新突破。","body":"微生物组研究揭示代谢新机制。据相关方面介绍，关键材料与工艺取得突破，稳定性改善。\n分析认为，拓展人类认知边界，赋能重大需求；成果转化通道有望进一步打通。"},{"cat":"前沿科研","catI":"🔬","catBg":"linear-gradient(135deg,#4facfe,#00f2fe)","catC":"#fff","title":"柔性电子皮肤感知精度提升","desc":"实验验证了关键科学猜想，意义深远。","body":"柔性电子皮肤感知精度提升。据相关方面介绍，理论模型得到实验印证，机制更清晰。\n分析认为，有望在能源、健康、信息等领域产生溢出效应；大科学装置与开放合作不可或缺。"},{"cat":"前沿科研","catI":"🔬","catBg":"linear-gradient(135deg,#4facfe,#00f2fe)","catC":"#fff","title":"量子通信骨干网密钥速率提高","desc":"交叉融合催生新方法、新工具。","body":"量子通信骨干网密钥速率提高。据相关方面介绍，实验装置性能提升，观测精度迈上新台阶。\n分析认为，为未来技术与产业变革埋下伏笔；多学科交叉将加速原创突破。"},{"cat":"前沿科研","catI":"🔬","catBg":"linear-gradient(135deg,#4facfe,#00f2fe)","catC":"#fff","title":"深海探测器抵达万米深渊","desc":"从0到1的原始创新持续涌现。","body":"深海探测器抵达万米深渊。据相关方面介绍，关键材料与工艺取得突破，稳定性改善。\n分析认为，拓展人类认知边界，赋能重大需求；成果转化通道有望进一步打通。"},{"cat":"前沿科研","catI":"🔬","catBg":"linear-gradient(135deg,#4facfe,#00f2fe)","catC":"#fff","title":"纳米机器人靶向给药完成验证","desc":"基础研究与前沿探索取得新突破。","body":"纳米机器人靶向给药完成验证。据相关方面介绍，理论模型得到实验印证，机制更清晰。\n分析认为，有望在能源、健康、信息等领域产生溢出效应；大科学装置与开放合作不可或缺。"},{"cat":"前沿科研","catI":"🔬","catBg":"linear-gradient(135deg,#4facfe,#00f2fe)","catC":"#fff","title":"拓扑量子比特稳定性改善","desc":"实验验证了关键科学猜想，意义深远。","body":"拓扑量子比特稳定性改善。据相关方面介绍，实验装置性能提升，观测精度迈上新台阶。\n分析认为，为未来技术与产业变革埋下伏笔；多学科交叉将加速原创突破。"},{"cat":"前沿科研","catI":"🔬","catBg":"linear-gradient(135deg,#4facfe,#00f2fe)","catC":"#fff","title":"人形机器人运动控制算法升级","desc":"交叉融合催生新方法、新工具。","body":"人形机器人运动控制算法升级。据相关方面介绍，关键材料与工艺取得突破，稳定性改善。\n分析认为，拓展人类认知边界，赋能重大需求；成果转化通道有望进一步打通。"},{"cat":"前沿科研","catI":"🔬","catBg":"linear-gradient(135deg,#4facfe,#00f2fe)","catC":"#fff","title":"蛋白质结构预测覆盖更多物种","desc":"从0到1的原始创新持续涌现。","body":"蛋白质结构预测覆盖更多物种。据相关方面介绍，理论模型得到实验印证，机制更清晰。\n分析认为，有望在能源、健康、信息等领域产生溢出效应；大科学装置与开放合作不可或缺。"},{"cat":"前沿科研","catI":"🔬","catBg":"linear-gradient(135deg,#4facfe,#00f2fe)","catC":"#fff","title":"石墨烯电池快充性能突破","desc":"基础研究与前沿探索取得新突破。","body":"石墨烯电池快充性能突破。据相关方面介绍，实验装置性能提升，观测精度迈上新台阶。\n分析认为，为未来技术与产业变革埋下伏笔；多学科交叉将加速原创突破。"},{"cat":"前沿科研","catI":"🔬","catBg":"linear-gradient(135deg,#4facfe,#00f2fe)","catC":"#fff","title":"仿生视觉假体恢复光感","desc":"实验验证了关键科学猜想，意义深远。","body":"仿生视觉假体恢复光感。据相关方面介绍，关键材料与工艺取得突破，稳定性改善。\n分析认为，拓展人类认知边界，赋能重大需求；成果转化通道有望进一步打通。"},{"cat":"前沿科研","catI":"🔬","catBg":"linear-gradient(135deg,#4facfe,#00f2fe)","catC":"#fff","title":"引力波探测天文台投入运行","desc":"交叉融合催生新方法、新工具。","body":"引力波探测天文台投入运行。据相关方面介绍，理论模型得到实验印证，机制更清晰。\n分析认为，有望在能源、健康、信息等领域产生溢出效应；大科学装置与开放合作不可或缺。"},{"cat":"前沿科研","catI":"🔬","catBg":"linear-gradient(135deg,#4facfe,#00f2fe)","catC":"#fff","title":"人工合成淀粉路线优化降本","desc":"从0到1的原始创新持续涌现。","body":"人工合成淀粉路线优化降本。据相关方面介绍，实验装置性能提升，观测精度迈上新台阶。\n分析认为，为未来技术与产业变革埋下伏笔；多学科交叉将加速原创突破。"},{"cat":"前沿科研","catI":"🔬","catBg":"linear-gradient(135deg,#4facfe,#00f2fe)","catC":"#fff","title":"极地科考取得新观测成果","desc":"基础研究与前沿探索取得新突破。","body":"极地科考取得新观测成果。据相关方面介绍，关键材料与工艺取得突破，稳定性改善。\n分析认为，拓展人类认知边界，赋能重大需求；成果转化通道有望进一步打通。"},{"cat":"前沿科研","catI":"🔬","catBg":"linear-gradient(135deg,#4facfe,#00f2fe)","catC":"#fff","title":"空间科学实验揭示微重力新效应","desc":"实验验证了关键科学猜想，意义深远。","body":"空间科学实验揭示微重力新效应。据相关方面介绍，理论模型得到实验印证，机制更清晰。\n分析认为，有望在能源、健康、信息等领域产生溢出效应；大科学装置与开放合作不可或缺。"}];
+;
+const NEWS_CATS=["全部","航天科技","人工智能","宏观经济","国内时政","前沿科研"];
+
+const NEWS=[
+ {t:"今日 09:15",tag:"利好",ttl:"央行开展 3000 亿元 MLF 操作，净投放力度超预期",sm:"流动性维持宽松，利好银行间市场与成长板块估值修复。",q:"MLF 净投放"},
+ {t:"今日 08:40",tag:"利好",ttl:"多部委联合发文支持 AI 算力基础设施建设，产业链公司获关注",sm:"算力租赁、光模块、液冷板块盘前活跃，机构建议关注业绩兑现主线。",q:"AI 算力 政策"},
+ {t:"昨日 21:30",tag:"动态",ttl:"美联储官员释放鸽派信号，市场上调降息预期",sm:"美元指数走弱，人民币资产吸引力提升，北向资金有望回流。",q:"美联储 降息预期"},
+ {t:"昨日 19:05",tag:"利好",ttl:"新能源汽车 7 月销量同比增长超 30%，产业链景气度回升",sm:"整车与电池环节排产上行，锂电材料价格企稳。",q:"新能源汽车 销量"},
+ {t:"昨日 16:20",tag:"动态",ttl:"证监会就上市公司分红新规征求意见，强化投资者回报",sm:"高股息策略关注度提升，红利指数近一月跑赢大盘。",q:"分红新规 高股息"},
+ {t:"昨日 14:10",tag:"风险",ttl:"部分消费电子公司中报预警，需求复苏不及预期",sm:"注意区分个股业绩分化，避免追高题材透支标的。",q:"消费电子 中报预警"},
+ {t:"昨日 10:30",tag:"利好",ttl:"国常会部署进一步扩大内需举措，消费板块午后拉升",sm:"家电、餐饮旅游、免税方向领涨，政策组合拳仍有预期空间。",q:"扩大内需 消费板块"},
+ {t:"前日 20:45",tag:"动态",ttl:"两市融资余额连续五日回升，市场风险偏好改善",sm:"杠杆资金回流成长方向，成交额重回万亿上方。",q:"融资余额 回升"},
+ {t:"前日 18:00",tag:"利好",ttl:"工信部发布工业母机产业政策，国产替代加速",sm:"高端数控机床、关键功能部件相关公司有望迎来订单增长。",q:"工业母机 国产替代"},
+ {t:"前日 16:15",tag:"动态",ttl:"人民币汇率突破7.20关口，外资流入提速",sm:"外资对A股配置意愿增强，蓝筹与白马股有望率先受益。",q:"人民币汇率 外资"},
+ {t:"前日 11:30",tag:"利好",ttl:"国家大基金三期完成首笔投资，聚焦 AI 芯片与设备",sm:"半导体设备、EDA、存储芯片方向获资金关注。",q:"大基金三期 半导体"},
+ {t:"前日 09:20",tag:"动态",ttl:"央行副行长：择机降准降息，结构性工具持续发力",sm:"政策面呵护意图明确，市场流动性环境有望继续改善。",q:"降准降息 预期"},
+ {t:"前日 08:45",tag:"风险",ttl:"海外科技股大幅波动，纳指单周回撤超 3%",sm:"关注 A 股科技板块联动效应，但内资定价权增强有望缓冲影响。",q:"纳指 科技股"},
+ {t:"2日 19:30",tag:"利好",ttl:"特高压输电工程招标重启，电力设备板块景气延续",sm:"变压器、换流阀、电缆方向订单可见度提升，关注业绩弹性。",q:"特高压 招标"},
+ {t:"2日 15:40",tag:"动态",ttl:"光伏组件价格企稳回升，硅料环节景气拐点临近",sm:"一线企业开工率回升，库存压力缓解，二季度业绩或环比改善。",q:"光伏 硅料 价格"},
+ {t:"2日 11:50",tag:"利好",ttl:"文旅部发布暑期促消费方案，景区与酒店迎旺季催化",sm:"OTA平台、连锁酒店、景区运营商业绩弹性显现。",q:"暑期 文旅 消费"},
+ {t:"2日 09:30",tag:"动态",ttl:"国债收益率创年内新低，债券基金吸引力提升",sm:"权益资产波动较大背景下，稳健资金加大债市配置。",q:"国债 收益率"},
+ {t:"2日 08:20",tag:"动态",ttl:"国际油价大幅反弹，布伦特原油突破 85 美元",sm:"油服、煤炭、新能源替代逻辑不同程度受益。",q:"油价 反弹"},
+ {t:"3日 18:00",tag:"利好",ttl:"工信部印发人形机器人创新发展指导意见",sm:"整机厂、零部件、传感器方向有望迎来产业化提速。",q:"人形机器人 政策"},
+ {t:"3日 15:20",tag:"动态",ttl:"高股息板块持续走强，银行股再创历史新高",sm:"险资、社保等长期资金加仓迹象明显，关注估值修复持续性。",q:"高股息 银行"},
+ {t:"3日 11:00",tag:"利好",ttl:"创新药出海再添大单，国产 ADC 获海外授权",sm:"CRO/CDMO、ADC平台型公司估值有望系统性提升。",q:"创新药 ADC 出海"},
+ {t:"3日 09:00",tag:"风险",ttl:"部分小盘股流动性枯竭，警惕退市风险",sm:"短期博弈资金离场，关注成交活跃度与基本面匹配度。",q:"小盘股 退市"},
+ {t:"3日 08:00",tag:"动态",ttl:"美元指数加速下行，黄金价格创历史新高",sm:"黄金股、资源股联动上涨，贵金属避险配置价值凸显。",q:"黄金 美元指数"},
+ {t:"4日 19:00",tag:"利好",ttl:"央行重启逆回购，呵护季末流动性",sm:"短端资金利率平稳，债市与股市流动性均受益。",q:"逆回购 流动性"},
+ {t:"4日 14:30",tag:"动态",ttl:"苹果产业链旺季备货启动，立讯蓝思等预期改善",sm:"果链龙头三季度业绩或超预期，关注北美客户份额提升方向。",q:"苹果产业链 备货"},
+ {t:"4日 10:10",tag:"利好",ttl:"国务院发布新型城镇化五年行动计划",sm:"建材、电梯、家居、地下管网等方向获政策长期支撑。",q:"城镇化 五年规划"},
+ {t:"4日 08:50",tag:"动态",ttl:"欧盟启动对华电动汽车反补贴调查最终表决",sm:"短期市场担忧情绪释放后，具备欧洲产能的整车厂有望展现韧性。",q:"欧盟 反补贴 电动车"},
+ {t:"5日 16:40",tag:"利好",ttl:"上海发布数字经济发展行动方案，加快 AI 大模型落地",sm:"算力、数据要素、AI 应用三条主线获政策密集催化。",q:"数字经济 大模型"},
+ {t:"5日 13:20",tag:"动态",ttl:"沪深北三市成交额重回 1.5 万亿上方",sm:"增量资金入市迹象明显，券商、互联网金融方向受益。",q:"成交额 增量"},
+ {t:"5日 09:30",tag:"利好",ttl:"证监会推出市场稳定一揽子政策，限制减持与暂停 IPO",sm:"短期缓解供给压力，长期资金入市意愿提升。",q:"证监会 减持 IPO"}
+];
+const MKT=[
+ {nm:"上证指数",v:"3,247.86",chg:+0.82},
+ {nm:"深证成指",v:"10,562.33",chg:+1.15},
+ {nm:"创业板指",v:"2,183.47",chg:-0.36},
+ {nm:"恒生指数",v:"18,924.60",chg:+0.54}
+];
+const BOOKMARK_DB=[
+{cat:"tax",name:"河南省电子税务局",url:"https://etax.henan.chinatax.gov.cn/",tags:"报税 纳税申报 河南 税务 增值税 发票"},
+{cat:"tax",name:"国家税务总局",url:"https://www.chinatax.gov.cn/",tags:"税收政策 公告 法规 总局"},
+{cat:"tax",name:"自然人电子税务局",url:"https://etax.chinatax.gov.cn/",tags:"个税 个人所得税 汇算清缴 扣缴"},
+{cat:"tax",name:"全国增值税发票查验平台",url:"https://inv-veri.chinatax.gov.cn/",tags:"发票 查验 真伪 增值税"},
+{cat:"tax",name:"12366 纳税服务平台",url:"https://12366.chinatax.gov.cn/",tags:"咨询 热线 纳税服务 答疑"},
+{cat:"bank",name:"交通银行企业网银",url:"https://ebank.95559.com.cn/CORPORBANK/logonPre.jsp",tags:"交行 对公 转账 企业网上银行 登录"},
+{cat:"bank",name:"工商银行企业网银",url:"https://corporbank.icbc.com.cn/",tags:"工行 对公 企业网上银行 登录"},
+{cat:"bank",name:"建设银行（企业网银入口）",url:"https://www.ccb.com/",tags:"建行 对公 企业网上银行"},
+{cat:"bank",name:"农业银行（企业网银入口）",url:"https://www.abchina.com/",tags:"农行 对公 企业网上银行"},
+{cat:"bank",name:"中国银行（企业网银入口）",url:"https://www.boc.cn/",tags:"中行 对公 企业网上银行"},
+{cat:"bank",name:"招商银行（企业银行入口）",url:"https://www.cmbchina.com/",tags:"招行 U-BANK 对公 企业网上银行"},
+{cat:"bank",name:"中原银行",url:"https://www.zybank.com.cn/",tags:"河南 本地银行 对公"},
+{cat:"info",name:"税屋",url:"https://www.shui5.cn/",tags:"财税政策 案例解析 税收法规 实务"},
+{cat:"info",name:"知乎",url:"https://www.zhihu.com/",tags:"问答 财税干货 学习"},
+{cat:"info",name:"中华会计网校",url:"https://www.chinaacc.com/",tags:"会计 继续教育 考证 初级 中级 注会"},
+{cat:"info",name:"会计视野",url:"https://www.esnai.com/",tags:"会计论坛 实务交流 准则"},
+{cat:"info",name:"财政部会计准则委员会",url:"https://www.casc.org.cn/",tags:"会计准则 财政部 解释公告"},
+{cat:"tool",name:"国家企业信用信息公示系统",url:"https://www.gsxt.gov.cn/",tags:"工商 年报 公示 信用 营业执照"},
+{cat:"tool",name:"信用中国",url:"https://www.creditchina.gov.cn/",tags:"信用查询 失信 惩戒"},
+{cat:"tool",name:"天眼查",url:"https://www.tianyancha.com/",tags:"企业查询 股东 风险"},
+{cat:"tool",name:"河南省人力资源和社会保障厅",url:"https://hrss.henan.gov.cn/",tags:"社保 公积金 人社 河南"}
+];
+const BM_CATS=[["all","全部"],["tax","税务"],["bank","银行网银"],["info","财税资讯"],["tool","工具查询"],["mine","我添加的"]];
+const BM_CAT_NAME={tax:"税务",bank:"银行",info:"资讯",tool:"工具",mine:"自建"};
+const MAO_QUOTES=[
+ {t:"谁是我们的敌人?谁是我们的朋友?这个问题是革命的首要问题。",s:"《中国社会各阶级的分析》1925年"},
+ {t:"枪杆子里面出政权。",s:"八七会议发言 1927年"},
+ {t:"星星之火,可以燎原。",s:"1930年"},
+ {t:"没有调查就没有发言权。",s:"《反对本本主义》1930年"},
+ {t:"真正的铜墙铁壁是什么?是群众,是千百万真心实意地拥护革命的群众。",s:"《关心群众生活,注意工作方法》1934年"},
+ {t:"长征是宣言书,长征是宣传队,长征是播种机。",s:"1935年"},
+ {t:"我们中华民族有同自己的敌人血战到底的气概。",s:"1935年"},
+ {t:"你要知道梨子的滋味,你就得变革梨子,亲口吃一吃。",s:"《实践论》1937年"},
+ {t:"共产党员决不可脱离群众的多数。",s:"1938年"},
+ {t:"我们共产党人好比种子,人民好比土地。",s:"《关于重庆谈判》1945年"},
+ {t:"我们都是来自五湖四海,为了一个共同的革命目标,走到一起来了。",s:"《为人民服务》1944年"},
+ {t:"一切反动派都是纸老虎。",s:"1946年"},
+ {t:"在战略上要藐视敌人,在战术上要重视敌人。",s:"1948年"},
+ {t:"人民,只有人民,才是创造世界历史的动力。",s:"《论联合政府》1945年"},
+ {t:"自从有了中国共产党,中国革命的面目就焕然一新了。",s:"1948年"},
+ {t:"十月革命一声炮响,给我们送来了马克思列宁主义。",s:"1949年"},
+ {t:"夺取全国胜利,这只是万里长征走完了第一步。",s:"1949年"},
+ {t:"我们不但善于破坏一个旧世界,我们还将善于建设一个新世界。",s:"1949年"},
+ {t:"中国人从此站立起来了。",s:"1949年"},
+ {t:"为人民服务,一刻也不脱离群众。",s:"1944年"},
+ {t:"群众是真正的英雄,而我们自己则往往是幼稚可笑的。",s:"1941年"},
+ {t:"凡是要夺取政权、巩固政权的共产党人都应研究这一规律。",s:"1949年"},
+ {t:"学习的敌人是自己的满足,要认真学习一点东西,必须从不自满开始。",s:"1938年"},
+ {t:"人是要有一点精神的。",s:"1957年"},
+ {t:"一万年太久,只争朝夕。",s:"1963年"},
+ {t:"数风流人物,还看今朝。",s:"1936年"},
+ {t:"雄关漫道真如铁,而今迈步从头越。",s:"1935年"},
+ {t:"自信人生二百年,会当水击三千里。",s:"1917年"},
+ {t:"一切从人民的利益出发,而不是从个人或小集团的利益出发。",s:"1945年"},
+ {t:"我们的权力是谁给的?是工人阶级给的,是贫下中农给的,是占人口百分之九十以上的广大劳动群众给的。",s:"1945年"},
+ {t:"党的路线,就是人民的路线。",s:"1942年"},
+ {t:"我们共产党人好比种子,人民好比土地。到一个地方就要同那里的人民结合起来。",s:"1945年"}
+];
+const POEMS=[
+ {q:"天生我材必有用,千金散尽还复来。",title:"将进酒",author:"李白",dyn:"唐",body:"君不见黄河之水天上来,奔流到海不复回。\n君不见高堂明镜悲白发,朝如青丝暮成雪。\n人生得意须尽欢,莫使金樽空对月。\n天生我材必有用,千金散尽还复来。",intro:"李白,号青莲居士,唐代伟大的浪漫主义诗人,被誉为「诗仙」。",mean:"以豪迈之笔宣告对自我价值的绝对自信,表达乐观旷达的人生态度。"},
+ {q:"竹杖芒鞋轻胜马,谁怕?一蓑烟雨任平生。",title:"定风波",author:"苏轼",dyn:"宋",body:"莫听穿林打叶声,何妨吟啸且徐行。\n竹杖芒鞋轻胜马,谁怕?一蓑烟雨任平生。\n料峭春风吹酒醒,微冷,山头斜照却相迎。\n回首向来萧瑟处,归去,也无风雨也无晴。",intro:"苏轼,号东坡居士,北宋文学家,唐宋八大家之一。",mean:"以「一蓑烟雨任平生」道出面对人生风雨的从容与豁达。"},
+ {q:"行到水穷处,坐看云起时。",title:"终南别业",author:"王维",dyn:"唐",body:"中岁颇好道,晚家南山陲。\n兴来每独往,胜事空自知。\n行到水穷处,坐看云起时。\n偶然值林叟,谈笑无还期。",intro:"王维,唐代山水田园诗派代表,苏轼评其「诗中有画,画中有诗」。",mean:"困境亦是转机,体现随遇而安、超然物外的禅意心境。"},
+ {q:"沉舟侧畔千帆过,病树前头万木春。",title:"酬乐天扬州初逢席上见赠",author:"刘禹锡",dyn:"唐",body:"巴山楚水凄凉地,二十三年弃置身。\n怀旧空吟闻笛赋,到乡翻似烂柯人。\n沉舟侧畔千帆过,病树前头万木春。\n今日听君歌一曲,暂凭杯酒长精神。",intro:"刘禹锡,字梦得,唐代文学家,有「诗豪」之称。",mean:"以新陈代谢的自然之理,表达身处逆境仍对未来充满信心的豁达胸襟。"},
+ {q:"会当凌绝顶,一览众山小。",title:"望岳",author:"杜甫",dyn:"唐",body:"岱宗夫如何?齐鲁青未了。\n造化钟神秀,阴阳割昏晓。\n荡胸生曾云,决眦入归鸟。\n会当凌绝顶,一览众山小。",intro:"杜甫,字子美,唐代伟大的现实主义诗人,被称为「诗圣」。",mean:"终要登上泰山之巅,俯瞰群山之渺小,抒发青年杜甫的雄心壮志。"},
+ {q:"山重水复疑无路,柳暗花明又一村。",title:"游山西村",author:"陆游",dyn:"宋",body:"莫笑农家腊酒浑,丰年留客足鸡豚。\n山重水复疑无路,柳暗花明又一村。\n箫鼓追随春社近,衣冠简朴古风存。\n从今若许闲乘月,拄杖无时夜叩门。",intro:"陆游,号放翁,南宋爱国诗人,存诗九千余首。",mean:"道出困境中蕴含转机的人生哲理。"},
+ {q:"海内存知己,天涯若比邻。",title:"送杜少府之任蜀州",author:"王勃",dyn:"唐",body:"城阙辅三秦,风烟望五津。\n与君离别意,同是宦游人。\n海内存知己,天涯若比邻。\n无为在歧路,儿女共沾巾。",intro:"王勃,字子安,「初唐四杰」之首,代表作有《滕王阁序》。",mean:"四海之内有知心朋友,纵使远在天边也如近邻,咏友情的千古名句。"},
+ {q:"众里寻他千百度,蓦然回首,那人却在,灯火阑珊处。",title:"青玉案·元夕",author:"辛弃疾",dyn:"宋",body:"东风夜放花千树,更吹落、星如雨。\n宝马雕车香满路。凤箫声动,玉壶光转,一夜鱼龙舞。\n蛾儿雪柳黄金缕,笑语盈盈暗香去。\n众里寻他千百度,蓦然回首,那人却在,灯火阑珊处。",intro:"辛弃疾,号稼轩,南宋豪放派词人代表,与苏轼并称「苏辛」。",mean:"王国维借此喻治学第三境界:历经求索,终有顿悟收获。"},
+ {q:"生当作人杰,死亦为鬼雄。",title:"夏日绝句",author:"李清照",dyn:"宋",body:"生当作人杰,死亦为鬼雄。\n至今思项羽,不肯过江东。",intro:"李清照,号易安居士,宋代婉约派词宗。",mean:"借项羽宁死不屈之典,抒发掷地有声的家国气节。"},
+ {q:"野火烧不尽,春风吹又生。",title:"赋得古原草送别",author:"白居易",dyn:"唐",body:"离离原上草,一岁一枯荣。\n野火烧不尽,春风吹又生。\n远芳侵古道,晴翠接荒城。\n又送王孙去,萋萋满别情。",intro:"白居易,号香山居士,唐代现实主义诗人,有「诗魔」之称。",mean:"歌颂生命顽强不息的力量,喻示希望永不断绝。"},
+ {q:"欲穷千里目,更上一层楼。",title:"登鹳雀楼",author:"王之涣",dyn:"唐",body:"白日依山尽,黄河入海流。\n欲穷千里目,更上一层楼。",intro:"王之涣,盛唐著名边塞诗人,代表作《凉州词》《登鹳雀楼》皆脍炙人口。",mean:"登高望远,将眼界与格局写进二十字,暗含「站得高方能看得远」。"},
+ {q:"采菊东篱下,悠然见南山。",title:"饮酒·其五",author:"陶渊明",dyn:"东晋",body:"结庐在人境,而无车马喧。\n问君何能尔?心远地自偏。\n采菊东篱下,悠然见南山。\n山气日夕佳,飞鸟相与还。\n此中有真意,欲辨已忘言。",intro:"陶渊明,中国第一位田园诗人,后世称「靖节先生」。",mean:"身居闹市而心远尘嚣,采菊见南山,道出归隐田园的悠然人生境界。"},
+ {q:"但愿人长久,千里共婵娟。",title:"水调歌头·明月几时有",author:"苏轼",dyn:"宋",body:"明月几时有,把酒问青天。\n不知天上宫阙,今夕是何年。\n我欲乘风归去,又恐琼楼玉宇,高处不胜寒。\n起舞弄清影,何似在人间。\n人有悲欢离合,月有阴晴圆缺,此事古难全。\n但愿人长久,千里共婵娟。",intro:"苏轼,字子瞻,号东坡居士,北宋文豪。",mean:"中秋望月怀弟,将人生聚散之理与诗情画意融而为一。"},
+ {q:"问君能有几多愁,恰是一江春水向东流。",title:"虞美人·春花秋月何时了",author:"李煜",dyn:"五代",body:"春花秋月何时了,往事知多少。\n小楼昨夜又东风,故国不堪回首月明中。\n雕栏玉砌应犹在,只是朱颜改。\n问君能有几多愁,恰是一江春水向东流。",intro:"李煜,南唐后主,其亡国词哀婉深挚,开宋词一代风气。",mean:"以奔流不息的春水喻无尽愁思,凄美绝伦。"},
+ {q:"人生自古谁无死,留取丹心照汗青。",title:"过零丁洋",author:"文天祥",dyn:"宋",body:"辛苦遭逢起一经,干戈寥落四周星。\n山河破碎风飘絮,身世浮沉雨打萍。\n惶恐滩头说惶恐,零丁洋里叹零丁。\n人生自古谁无死,留取丹心照汗青。",intro:"文天祥,南宋末抗元英雄,民族脊梁式的人物。",mean:"以死明志的爱国情怀,气贯长虹,激励了无数志士仁人。"},
+ {q:"不畏浮云遮望眼,自缘身在最高层。",title:"登飞来峰",author:"王安石",dyn:"宋",body:"飞来山上千寻塔,闻说鸡鸣见日升。\n不畏浮云遮望眼,自缘身在最高层。",intro:"王安石,北宋政治家、思想家、文学家,「唐宋八大家」之一。",mean:"站得高才能看得远,表达政治家的远大抱负与坚定信念。"},
+ {q:"莫愁前路无知己,天下谁人不识君。",title:"别董大",author:"高适",dyn:"唐",body:"千里黄云白日曛,北风吹雁雪纷纷。\n莫愁前路无知己,天下谁人不识君。",intro:"高适,唐代边塞诗人,「边塞四诗人」之一。",mean:"赠友人之作,以豪迈之语宽慰远行友人,是友情的至诚之声。"},
+ {q:"千磨万击还坚劲,任尔东西南北风。",title:"竹石",author:"郑燮",dyn:"清",body:"咬定青山不放松,立根原在破岩中。\n千磨万击还坚劲,任尔东西南北风。",intro:"郑燮,号板桥,「扬州八怪」之一,清代书画家、文学家。",mean:"以岩竹喻志士仁人,刚正不阿、铁骨铮铮的人格宣言。"},
+ {q:"劝君莫惜金缕衣,劝君惜取少年时。",title:"金缕衣",author:"杜秋娘",dyn:"唐",body:"劝君莫惜金缕衣,劝君惜取少年时。\n有花堪折直须折,莫待无花空折枝。",intro:"杜秋娘,晚唐著名歌妓,《金缕衣》是她的代表作。",mean:"劝人珍惜少年时光,「有花堪折直须折」成为千古流传的励志名句。"},
+ {q:"少壮不努力,老大徒伤悲。",title:"长歌行",author:"汉乐府",dyn:"汉",body:"青青园中葵,朝露待日晞。\n阳春布德泽,万物生光辉。\n常恐秋节至,焜黄华叶衰。\n百川东到海,何时复西归?少壮不努力,老大徒伤悲。",intro:"《长歌行》是汉代乐府诗,选自《乐府诗集》。",mean:"以自然之喻训诫世人珍惜光阴,奋发图强,莫待老时空悲切。"}
+];
+const QUOTES=[
+ {t:"想,全是问题;做,才有答案。",s:"人民日报夜读"},
+ {t:"你有多自律,就有多自由。",s:"人民日报夜读"},
+ {t:"所有难过,难是难,但总会过。",s:"人民日报夜读"},
+ {t:"蹉跎只能感动自己,行动才能打动别人。",s:"人民日报夜读"},
+ {t:"把行动交给现在,把结果交给时间。",s:"人民日报夜读"},
+ {t:"有输得起的勇气,才会有赢得到的底气。",s:"人民日报夜读"},
+ {t:"你自己不放弃,别人才有机会帮你。",s:"人民日报夜读"},
+ {t:"你做三四月的事,在八九月自有答案。",s:"人民日报夜读"},
+ {t:"多一分坚持,就会少一分遗憾。",s:"人民日报夜读"},
+ {t:"那些难走的路,往往都是向上的路。",s:"人民日报夜读"},
+ {t:"想要成为什么人,就努力靠近什么样的人。",s:"人民日报夜读"},
+ {t:"勇敢地迈出第一步,是治愈焦虑的良药。",s:"人民日报夜读"},
+ {t:"有风有雨是人生的常态,迎难而上才能逆风翻盘。",s:"人民日报夜读"},
+ {t:"读书就是用最低廉的成本走最高级的成长路。",s:"人民日报夜读"},
+ {t:"你的迷茫,大多都是因为想得太多、做得太少。",s:"人民日报夜读"},
+ {t:"努力提升自己,永远比仰望别人有意义。",s:"人民日报夜读"},
+ {t:"脆弱的人总是有很多借口,但勇者却从不逃走。",s:"人民日报夜读"},
+ {t:"记住,能打败自己的永远只有下一秒的自己。",s:"人民日报夜读"},
+ {t:"躲起来的星星也在努力发光,你也要加油。",s:"人民日报夜读"},
+ {t:"焦虑不会消除明天的悲伤,它只会消耗今天的力量。",s:"人民日报夜读"},
+ {t:"不要在该奋斗的年纪选择安逸。",s:"人民日报"},
+ {t:"成功不是将来才有的,而是从决定去做的那一刻起持续累积而成。",s:"人民日报"}
+];
+const EXCERPTS=[
+ {t:"生活不可能像你想象的那么好,但也不会像你想象的那么糟。",s:"莫泊桑《一生》",n:"人生泥沙俱下,有笑有泪。一直在路上,就是生活唯一的答案。"},
+ {t:"世界不会在意你的自尊,人们看到的只是你的成就。在你没有成就以前,切勿过分强调自尊。",s:"菲茨杰拉德《了不起的盖茨比》",n:"放下身段、先做出成绩,是成事的第一步。"},
+ {t:"在满地都是六便士的街上,他抬起头看月亮。",s:"毛姆《月亮与六便士》",n:"在现实与理想之间,总有人选择仰望月亮,坚守内心的光。"},
+ {t:"一个人并不是生来要被打败的,你尽可以把他消灭掉,可就是打不败他。",s:"海明威《老人与海》",n:"人的高贵,在于可以被摧毁,却不能被征服。"},
+ {t:"过去都是假的,回忆是一条没有归途的路,唯有孤独永恒。",s:"马尔克斯《百年孤独》",n:"放下对过去的执念,才走得出现实的迷宫。"},
+ {t:"世界上最宽阔的是海洋,比海洋更宽阔的是天空,比天空更宽阔的是人的心灵。",s:"雨果《悲惨世界》",n:"宽容与悲悯,能让心灵比天地更辽阔。"},
+ {t:"如果你渴望得到某样东西,你得让它自由,如果它回到你身边,它就是属于你的。",s:"大仲马《基督山伯爵》",n:"握得太紧反而易失,懂得放手才有真正的拥有。"},
+ {t:"没人对你说「不」的时候,你是长不大的。",s:"托尔斯泰《战争与和平》",n:"每一次拒绝,都是成长的契机与成年礼。"},
+ {t:"生活不是你活过的样子,而是你记住的样子。",s:"麦家《人生海海》",n:"记忆可以筛选,你记住的温暖,赋予了生活意义。"},
+ {t:"记住该记住的,忘记该忘记的。改变能改变的,接受不能改变的。",s:"塞林格《麦田里的守望者》",n:"定期清理心灵的垃圾,内心才能豁达安闲。"},
+ {t:"婚姻是一座围城,城外的人想进去,城里的人想出来。",s:"钱钟书《围城》",n:"不必羡慕别人的生活,自己选的路不抱怨就好。"},
+ {t:"生存还是毁灭,这是一个值得思考的问题。",s:"莎士比亚《哈姆雷特》",n:"在每一个关键抉择前,先问清自己真正想要什么。"},
+ {t:"幸福的家庭是相同的,不幸的家庭各有各的不同。",s:"托尔斯泰《安娜·卡列尼娜》",n:"幸福有共性,经营好当下,便是最朴实的智慧。"},
+ {t:"如果冬天来了,春天还会远吗?",s:"雪莱《雪莱诗选》",n:"再长的低谷也会过去,请为希望留一扇窗。"},
+ {t:"人最宝贵的是生命,当他回首往事时,不因虚度年华而悔恨。",s:"奥斯特洛夫斯基《钢铁是怎样炼成的》",n:"把有限的生命,投入到值得的事业里,才不负此生。"},
+ {t:"当你沉默的时候,你觉得很充实,开口说话就感到空虚。",s:"鲁迅《野草·题辞》",n:"话多半说给自己听,沉默是一种境界与修行。"},
+ {t:"一个人只要有意志力,就能超越他的环境。",s:"杰克·伦敦《马丁·伊登》",n:"环境从来不是上限,意志力才是。"},
+ {t:"世事洞明皆学问,人情练达即文章。",s:"曹雪芹《红楼梦》",n:"世事洞明,人情练达,做人处事的至理箴言。"},
+ {t:"幸福的奥秘在于:让心,放空;让身,运动;让情,平静;让爱,流动。",s:"《菜根谭》",n:"四大平衡之道,简单却直指人心。"},
+ {t:"有些事,不是看到希望才去坚持,而是坚持了才能看到希望。",s:"斯蒂芬·金《肖申克的救赎》",n:"救赎不是你走出监狱,而是你在绝望中找到的那一束光。"}
+];
+
+let newsFilter="全部";
+let newsCurList=[];
+function renderNews(){
+  const cats=NEWS_CATS;
+  $("newsFilters").innerHTML=cats.map(c=>`<span class="chip ${newsFilter===c?"on":""}" onclick="newsFilter='${c}';renderNews()">${c}</span>`).join("");
+  $("newsDate").textContent=fmtCN(todayStr());
+  let list=[...NEWS_DB];
+  if(newsFilter!=="全部")list=list.filter(n=>n.cat===newsFilter);
+  const kw=(($("newsKw")?.value||"").trim()).toLowerCase();
+  if(kw)list=list.filter(n=>(n.title+n.cat+n.desc).toLowerCase().includes(kw));
+  newsCurList=list;
+  const favs=LS.get("news_favs",[]);
+  $("newsList").innerHTML=list.map((n,i)=>{
+    const fid=n.cat+"|"+n.title;
+    const isFav=favs.includes(fid);
+    const rankCls=i<3?"t"+String(i+1):"tx";
+    return `<div class="news-card" style="cursor:pointer" onclick="openNewsDetail(${i})"><div class="news-rank ${rankCls}">${i+1}</div><div class="news-body"><div class="news-cat" style="background:${n.catBg};color:${n.catC}"><span class="ci">${n.catI}</span>${n.cat}</div><div class="news-title">${esc(n.title)}</div><div class="news-desc">${esc(n.desc)}</div><div class="news-more">阅读全文 ›</div></div><div class="news-star ${isFav?"on":""}" onclick="event.stopPropagation();toggleNewsFav(this)" data-fid="${esc(fid)}" title="${isFav?"取消收藏":"收藏"}">★</div></div>`;
+  }).join("")+(list.length?"":'<div class="empty">没有匹配的资讯</div>');
+}
+function openNewsDetail(i){
+  const n=newsCurList[i];
+  if(!n)return;
+  const cat=$("newsCat");
+  cat.innerHTML=`<span class="ci">${n.catI}</span>${n.cat}`;
+  cat.style.background=n.catBg;cat.style.color=n.catC;
+  $("newsTitle").textContent=n.title;
+  $("newsMeta").textContent=n.desc;
+  const paras=(n.body||"").split("\n").filter(Boolean);
+  $("newsBody").innerHTML='<div class="ch">'+paras.map(p=>`<p>${esc(p)}</p>`).join("")+'</div>';
+  $("newsMask").classList.add("show");
+  document.getElementById("newsBody").scrollTop=0;
+}
+function closeNews(){$("newsMask").classList.remove("show");}
+function toggleNewsFav(el){
+  const fid=el.getAttribute("data-fid");
+  let favs=LS.get("news_favs",[]);
+  const idx=favs.indexOf(fid);
+  if(idx>=0){favs.splice(idx,1);el.classList.remove("on");toast("已取消收藏");}
+  else{favs.push(fid);el.classList.add("on");toast("已收藏资讯");}
+  LS.set("news_favs",favs);
+}
+function renderIdeas(){$("ideaDate").textContent=fmtCN(todayStr());renderIdeaList();if(_cals.idea){buildCal("idea");showIdeaDay(_cals.idea.sel);}}
+/* 灵感记录 · 月历 */
+function ideaHasData(d){return LS.get("ideas",[]).some(i=>i.date===d);}
+function renderIdeaCal(){calOpen("idea","ideaCal",showIdeaDay,ideaHasData);showIdeaDay(todayStr());}
+function showIdeaDay(d){
+  const list=LS.get("ideas",[]).filter(i=>i.date===d).sort((a,b)=>b.ts-a.ts);
+  let html=`<div class="day-detail"><div class="day-sec"><h4>💡 ${fmtCN(d)} 灵感记录 <span class="muted" style="font-weight:400">${list.length?`共 ${list.length} 条`:""}</span></h4>`;
+  html+= list.length? list.map(it=>`<div class="idea-item"><div class="d"><span>${it.date} ${it.time||""}</span><button class="del-btn" onclick="delIdea(${it.ts})" title="删除">✕</button></div><p>${esc(it.text)}</p></div>`).join("") : '<div class="day-empty">当天没有记录灵感</div>';
+  html+=`</div></div>`;
+  $("ideaDayDetail").innerHTML=html;
+}
+function renderIdeaList(){
+  const ideas=LS.get("ideas",[]);
+  const kw=($("ideaSearch")?.value||"").trim().toLowerCase();
+  const list=kw?ideas.filter(it=>(it.text||"").toLowerCase().includes(kw)):ideas;
+  $("ideaCount").textContent=ideas.length?`共 ${ideas.length} 条${kw?` · 匹配 ${list.length} 条`:""}`:"";
+  $("ideaList").innerHTML=list.length?list.map(it=>`<div class="idea-item"><div class="d"><span>${it.date} ${it.time||""}</span><button class="del-btn" onclick="delIdea(${it.ts})" title="删除">✕</button></div><p>${esc(it.text)}</p></div>`).join(""):'<div class="empty">没有匹配的灵感'+(kw?"：换个关键字试试":"，写下第一条吧")+'</div>';
+}
+function filterIdeas(){renderIdeaList();}
+function saveIdea(){const v=$("ideaInput").value.trim();if(!v){toast("先写点什么吧");return;}const ideas=LS.get("ideas",[]);const d=new Date();let ts=Date.now();while(ideas.some(i=>i.ts===ts))ts++;ideas.unshift({ts,date:todayStr(),time:String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0"),text:v});LS.set("ideas",ideas);$("ideaInput").value="";toast("灵感已保存");renderIdeas();}
+function delIdea(ts){LS.set("ideas",LS.get("ideas",[]).filter(i=>i.ts!==ts));renderIdeas();}
+function ideaReminderCheck(){const now=new Date();if(now.getHours()<20)return;const flag=LS.get("ideaRemind","");if(flag===todayStr())return;const hasToday=LS.get("ideas",[]).some(i=>i.date===todayStr());if(!hasToday){LS.set("ideaRemind",todayStr());toast("今天还没有记录灵感哦,快写下你的奇思妙想吧!",6000);if("Notification" in window){if(Notification.permission==="granted")new Notification("灵感提醒",{body:"今天还没有记录灵感哦,快写下你的奇思妙想吧!"});else if(Notification.permission==="default")Notification.requestPermission();}go("idea");}else{LS.set("ideaRemind",todayStr());}}
+setInterval(ideaReminderCheck,60*1000);
+function refreshInvest(){renderInvest();toast("已刷新投资数据");}
+function renderInvest(){$("investDate").textContent=fmtCN(todayStr());$("mktCards").innerHTML=MKT.map(m=>{const up=m.chg>=0;return `<div class="mkt-card"><div class="nm">${m.nm}</div><div class="v ${up?"up":"down"}">${m.v}</div><div class="chg ${up?"up":"down"}">${up?"▲":"▼"} ${up?"+":""}${m.chg}%</div></div>`;}).join("");const shuffled=seedShuffle(NEWS,Date.now()%999999);const tagColor={"利好":"background:#fdecea;color:var(--red)","动态":"background:var(--accent-soft);color:var(--accent)","风险":"background:#e4f6ec;color:var(--green)"};$("newsList").innerHTML=shuffled.map(n=>`<div class="news-item"><div class="t">${n.t}</div><div class="bd"><div class="ttl">${esc(n.ttl)} <span class="tag" style="${tagColor[n.tag]}">${n.tag}</span></div><div class="sm">${esc(n.sm)}</div></div><button class="jump-btn btn-sm" onclick="window.open('https://so.eastmoney.com/news/s?keyword='+encodeURIComponent('${n.q}'))">查看详情 →</button></div>`).join("");}
+let focusTimer=null,focusRunning=false,focusPresetMin=60,focusSecLeft=3600,focusStartedAt=null,focusElapsed=0;
+function fmtMMSS(s){s=Math.max(0,Math.floor(s));const m=Math.floor(s/60),ss=s%60;return String(m).padStart(2,"0")+":"+String(ss).padStart(2,"0");}
+function updateFocusUI(){
+  const disp=$("timerDisplay");
+  if(disp)disp.textContent=fmtMMSS(focusSecLeft);
+  const hint=$("timerHint");
+  if(hint)hint.textContent=focusRunning?"专注中... 加油!":"写下任务,开始专注吧";
+  const circ=$("timerCircle");
+  if(circ){const pct=1-focusSecLeft/(focusPresetMin*60);circ.style.background=`conic-gradient(var(--accent) 0%, var(--accent) ${pct*100}%, #efeef6 ${pct*100}%, #efeef6 100%)`;}
+  $("btnStart")?.addEventListener?.("click");
+}
+function startFocus(){if(focusRunning){focusRunning=false;if(focusTimer){clearInterval(focusTimer);focusTimer=null;}
+focusElapsed=(Date.now()-focusStartedAt)/1000;const costS=focusSecLeft;if(costS>0){focusSecLeft=0;recordFocus(Math.ceil((focusPresetMin*60-costS)/60*10)/10||focusPresetMin);}updateFocusUI();return;}
+const task=$("focusTask").value.trim();if(!task){toast("先写下这次要做的事");$("focusTask").focus();return;}
+if(focusSecLeft<=0)focusSecLeft=focusPresetMin*60;
+focusRunning=true;focusStartedAt=Date.now();
+focusTimer=setInterval(()=>{
+if(!focusRunning){clearInterval(focusTimer);focusTimer=null;return;}
+focusSecLeft--;updateFocusUI();
+if(focusSecLeft<=0){focusRunning=false;clearInterval(focusTimer);focusTimer=null;toast("专注时间到!记一笔吧 ✨");doneFocus();}
+},1000);updateFocusUI();toast("开始专注 "+task);}
+function doneFocus(){
+  if(focusRunning){focusRunning=false;if(focusTimer){clearInterval(focusTimer);focusTimer=null;}
+focusElapsed=(Date.now()-focusStartedAt)/1000;}
+const mins=focusSecLeft>0?Math.max(0.5,((focusPresetMin*60-focusSecLeft)/60)):focusPresetMin;
+recordFocus(Math.round(mins*10)/10);
+focusSecLeft=focusPresetMin*60;updateFocusUI();
+$("focusTask").value="";
+toast("已记录本次专注 "+Math.round(mins*10)/10+" 分钟 🎯");
+}
+function recordFocus(mins){
+  const fs=LS.get("focusSessions",[]);
+  fs.unshift({ts:Date.now(),date:todayStr(),mins:+mins||0});
+  LS.set("focusSessions",fs);
+  updateFocusStats();
+}
+function updateFocusStats(){
+  const fs=LS.get("focusSessions",[]);
+  const todayMin=fs.filter(f=>f.date===todayStr()).reduce((s,f)=>s+f.mins,0);
+  const start=new Date();const dow=(start.getDay()+6)%7;
+  const weekStart=new Date(start.getFullYear(),start.getMonth(),start.getDate()-dow).getTime();
+  const weekMin=fs.filter(f=>f.ts>=weekStart).reduce((s,f)=>s+f.mins,0);
+  $("focusTodayMin").textContent=Math.round(todayMin);
+  $("focusWeekMin").textContent=Math.round(weekMin);
+}
+function resetFocusTimer(){if(focusRunning){focusRunning=false;if(focusTimer){clearInterval(focusTimer);focusTimer=null;}}
+focusSecLeft=focusPresetMin*60;focusStartedAt=null;focusElapsed=0;updateFocusUI();toast("已重置专注计时器");}
+function setPreset(m,el){
+  focusPresetMin=m;
+  $("customMin").value=m;
+  document.querySelectorAll(".preset-btn").forEach(b=>b.classList.remove("on"));
+  if(el)el.classList.add("on");
+  focusSecLeft=m*60;updateFocusUI();
+}
+function applyCustomTime(){const v=parseInt($("customMin").value);if(!v||v<1||v>480){toast("请输入 1-480 之间的数字");return;}
+document.querySelectorAll(".preset-btn").forEach(b=>b.classList.remove("on"));
+focusPresetMin=v;focusSecLeft=v*60;updateFocusUI();toast("已设置专注时长 "+v+" 分钟");}
+function renderHabits(){
+  const h=LS.get("habits",[]);const todayDone=LS.get("habitsToday",{});
+  $("habitList").innerHTML=h.length?h.map(item=>{
+    const done=!!todayDone[item.id];
+    return `<div class="habit-item"><span>${esc(item.name)}</span><span class="habit-check ${done?"done":""}" onclick="toggleHabit(${item.id})">${done?"✓":""}</span></div>`;}).join(""):'<div class="empty">还没有习惯,添加一个开始坚持吧～</div>';
+}
+function addHabit(){
+  const v=$("habitInput").value.trim();if(!v){toast("输入习惯名称");return;}
+  const list=LS.get("habits",[]);list.push({id:Date.now(),name:v});LS.set("habits",list);$("habitInput").value="";renderHabits();
+}
+function toggleHabit(id){
+  const today=LS.get("habitsToday",{});today[id]=!today[id];
+  if(!today[id])delete today[id];
+  LS.set("habitsToday",today);renderHabits();
+}
+const CUL_TABS=[
+  {id:"poem",name:"诗词"},
+  {id:"quote",name:"能量金句"},
+  {id:"excerpt",name:"优质书摘"},
+  {id:"mao",name:"毛选语句"},
+  {id:"book",name:"书籍阅读"}
+];
+let curCultureTab="poem";
+let curPoemList=[];
+function renderCulTabs(){
+  const html=CUL_TABS.map(t=>`<div class="cul-tab-group"><button class="cul-tab ${curCultureTab===t.id?"active":""}" data-tab="${t.id}" onclick="switchCultureTab('${t.id}')">${t.name}</button><button class="btn-refresh cul-refresh" onclick="refreshCultureTab('${t.id}')" title="刷新本模块">🔄 刷新</button></div>`).join("");
+  $("culTabs").innerHTML=html;
+}
+function switchCultureTab(tab){if(window.speechSynthesis)speechSynthesis.cancel();curCultureTab=tab;renderCulTabs();renderCultureTab();}
+function refreshCultureTab(tab){if(tab!==curCultureTab){if(window.speechSynthesis)speechSynthesis.cancel();curCultureTab=tab;renderCulTabs();}renderCultureTab(true);toast("已刷新本模块");}
+function getLearnedSet(){const id=curCultureTab;const learned=LS.get("learned_"+id,{});return learned;}
+function learnedTotal(){return CUL_TABS.reduce((s,t)=>s+Object.keys(LS.get("learned_"+t.id,{})).length,0);}
+function updateCultureTotal(){const el=$("cultureTotal");if(el)el.textContent=learnedTotal();}
+function markLearned(unique){
+  const id=curCultureTab;
+  const learned=LS.get("learned_"+id,{});learned[unique]=todayStr();LS.set("learned_"+id,learned);
+}
+function unmarkLearned(unique){
+  const id=curCultureTab;
+  const learned=LS.get("learned_"+id,{});delete learned[unique];LS.set("learned_"+id,learned);
+}
+function getShuffled(arr){
+  return seedShuffle(arr,(daySeed()*1000+Math.floor(Math.random()*233280))%233280);
+}
+function renderCultureTab(forceRefresh){
+  const box=$("cultureContent");
+  $("poemSearchRow").style.display = curCultureTab==="poem"?"flex":"none";
+  const learned=getLearnedSet();
+  if(curCultureTab==="poem"){
+    $("cultureNotice").textContent="点击诗词卡片展开全文与释义,「🔊 朗读」听 AI 语音朗诵;顶部可关键词搜索诗词。";
+    renderPoemList();
+  }else if(curCultureTab==="quote"){
+    $("cultureNotice").textContent="选自《人民日报》夜读高赞金句,句句带光。";
+    const list=getShuffled(QUOTES).slice(0,20);
+    box.innerHTML='<div class="cul-grid">'+list.map((q,i)=>{
+      const key="q"+i;const done=learned[key];
+      return `<div class="cul-card"><div class="q">${esc(q.t)}</div><div class="src">—— ${esc(q.s)}</div><div class="acts" style="justify-content:flex-end"><button class="learned-btn ${done?"done":""}" onclick="toggleLearned('${key}','q${i}',this)">${done?"✓ 已学习":"已学习"}</button></div></div>`;}).join("")+'</div>';
+  }else if(curCultureTab==="excerpt"){
+    $("cultureNotice").textContent="精选世界名著传世金句,附一句解读。";
+    const list=getShuffled(EXCERPTS).slice(0,20);
+    box.innerHTML='<div class="cul-grid">'+list.map((e,i)=>{
+      const key="e"+i;const done=learned[key];
+      return `<div class="cul-card"><div class="q" onclick="toggleCF('cfe${i}')">${esc(e.t)}</div><div class="src" onclick="toggleCF('cfe${i}')">—— ${esc(e.s)}</div><div class="cul-full" id="cfe${i}"><h4>解读</h4><p>${esc(e.n)}</p></div><div class="acts"><div></div><button class="learned-btn ${done?"done":""}" onclick="event.stopPropagation();toggleLearned('${key}','e${i}',this)">${done?"✓ 已学习":"已学习"}</button></div></div>`;}).join("")+'</div>';
+  }else if(curCultureTab==="mao"){
+    $("cultureNotice").textContent="毛泽东选集经典语句,点击展开前后文语境、释义与历史背景。";
+    const list=getShuffled(MAO_QUOTES).slice(0,20);
+    box.innerHTML='<div class="cul-grid">'+list.map((m,i)=>{
+      const e=MAO_EXT[m.t]||{};const key="m"+i;const done=learned[key];
+      return `<div class="cul-card"><div class="q" onclick="toggleCF('cfm${i}')">${esc(m.t)}</div><div class="src" onclick="toggleCF('cfm${i}')">—— ${esc(m.s)}</div><div class="cul-full" id="cfm${i}"><h4>前后文语境</h4><p>${esc(e.ctx||"")}</p><h4>释义</h4><p>${esc(e.mean||"")}</p><h4>历史背景与心路历程</h4><p>${esc(e.bg||"")}</p></div><div class="acts" style="justify-content:flex-end"><button class="learned-btn ${done?"done":""}" onclick="event.stopPropagation();toggleLearned('${key}','m${i}',this)">${done?"✓ 已学习":"已学习"}</button></div></div>`;}).join("")+'</div>';
+  }else if(curCultureTab==="book"){
+    $("cultureNotice").textContent="人际沟通 / 财商 / 散文 三类好书,点击直接阅读,进度自动保存。";
+    renderBooks();
+  }
+}
+function toggleLearned(key,unique,btn){
+  const learned=getLearnedSet();
+  if(learned[unique]){btn.classList.remove("done");btn.textContent="已学习";unmarkLearned(unique);}
+  else{btn.classList.add("done");btn.textContent="✓ 已学习";markLearned(unique);}
+  updateCultureTotal();
+}
+function toggleCF(id){const el=document.getElementById(id);if(el)el.classList.toggle("show");}
+function speakText(i){if(!("speechSynthesis" in window)){toast("当前浏览器不支持语音朗读");return;}speechSynthesis.cancel();const list=curPoemList&&curPoemList.length?curPoemList:getShuffled(POEMS).slice(0,20);const p=list[i];if(!p)return;const u=new SpeechSynthesisUtterance((p.body||p.q).replace(/\n/g,"。"));u.lang="zh-CN";u.rate=.9;u.pitch=1;const v=pickZhVoice();if(v)u.voice=v;u.onstart=()=>{const b=$("tts"+i);if(b){b.classList.add("speaking");b.textContent="🔈 朗读中";}};u.onend=()=>{const b=$("tts"+i);if(b){b.classList.remove("speaking");b.textContent="🔊 朗读";}};speechSynthesis.speak(u);toast("正在朗读:"+p.title);}
+function pickZhVoice(){if(!("speechSynthesis" in window))return null;const vs=speechSynthesis.getVoices()||[];return vs.find(v=>/zh|chinese|中文|普通话/i.test((v.lang||"")+(v.name||"")))||null;}
+function renderCulture(){$("cultureDate").textContent=fmtCN(todayStr())+" · 每日精选";const c=LS.get("culture",{lastDate:"",streak:0,totalDays:0});const doneToday=c.lastDate===todayStr();$("cultureTodayState").textContent=doneToday?"已打卡":"未打卡";$("cultureTodayState").style.color=doneToday?"var(--green)":"var(--orange)";let streak=c.streak||0;if(c.lastDate&&c.lastDate!==todayStr()){const gap=(new Date(todayStr())-new Date(c.lastDate))/86400000;if(gap>1){streak=0;c.streak=0;LS.set("culture",c);}}$("cultureStreak").textContent=streak;updateCultureTotal();const btn=$("cultureCheckBtn");btn.textContent=doneToday?"今日已打卡":"今日打卡";btn.disabled=doneToday;btn.style.opacity=doneToday?".5":"1";renderCulTabs();try{renderCultureTab();}catch(e){console.error("文化学习内容加载失败:",e);$("cultureContent").innerHTML='<div class="empty">模块内容加载出错，请刷新重试：'+(e&&e.message?e.message:"未知错误")+'</div>';}}
+function checkinCulture(){const c=LS.get("culture",{lastDate:"",streak:0,totalDays:0});if(c.lastDate===todayStr())return;const gap=c.lastDate?(new Date(todayStr())-new Date(c.lastDate))/86400000:99;c.streak=(gap===1)?(c.streak||0)+1:1;c.lastDate=todayStr();c.totalDays=(c.totalDays||0)+1;LS.set("culture",c);toast("文化学习打卡成功 🌟");renderCulture();}
+const DEFAULT_CATS={expense:["餐饮","交通","购物","娱乐","住房","医疗","教育","通讯","人情","旅行","宠物","其他"],income:["工资","理财","兼职","红包","其他"]};
+function getLedger(){
+  const l=LS.get("ledger",{records:[],cats:JSON.parse(JSON.stringify(DEFAULT_CATS))});
+  /* 结构自愈：兼容旧版本数据，缺失或为空的字段自动补全默认值，避免分类下拉框渲染失败 */
+  let fixed=false;
+  if(!Array.isArray(l.records)){l.records=[];fixed=true;}
+  if(!l.cats||typeof l.cats!=="object"){l.cats=JSON.parse(JSON.stringify(DEFAULT_CATS));fixed=true;}
+  else{
+    if(!Array.isArray(l.cats.expense)||!l.cats.expense.length){l.cats.expense=DEFAULT_CATS.expense.slice();fixed=true;}
+    if(!Array.isArray(l.cats.income)||!l.cats.income.length){l.cats.income=DEFAULT_CATS.income.slice();fixed=true;}
+  }
+  if(fixed)LS.set("ledger",l);
+  return l;
+}
+function fillCatOptions(){
+  try{
+    const sel=$("ldgCat");if(!sel)return;
+    const l=getLedger();const type=($("ldgType")&&$("ldgType").value)||"expense";
+    const cats=(l.cats[type]&&l.cats[type].length)?l.cats[type]:DEFAULT_CATS[type];
+    const prev=sel.value; /* 保留当前已选分类，避免重建选项后跳回第一项 */
+    sel.innerHTML=cats.map(c=>`<option value="${esc(c)}">${esc(c)}</option>`).join("");
+    if(prev&&cats.includes(prev))sel.value=prev;
+    renderCatManage();
+  }catch(e){
+    /* 兜底：即使数据异常也保证下拉框可用 */
+    const sel=$("ldgCat");if(sel)sel.innerHTML=DEFAULT_CATS.expense.map(c=>`<option>${c}</option>`).join("");
+  }
+}
+function renderCatManage(){const l=getLedger();const type=($("ldgType")&&$("ldgType").value)||"expense";const cats=(l.cats[type]&&l.cats[type].length)?l.cats[type]:DEFAULT_CATS[type];$("catManage").innerHTML=cats.map(c=>`<span class="cat-pill">${esc(c)}<span onclick="delCategory('${esc(c)}')" title="删除分类">✕</span></span>`).join("");}
+function addCategory(){const v=$("newCatInput").value.trim();if(!v){toast("输入分类名");return;}const l=getLedger();const type=$("ldgType").value;if(l.cats[type].includes(v)){toast("分类已存在");return;}l.cats[type].push(v);LS.set("ledger",l);$("newCatInput").value="";fillCatOptions();toast("分类已添加");}
+function delCategory(c){const l=getLedger();const type=$("ldgType").value;if(l.cats[type].length<=1){toast("至少保留一个分类");return;}l.cats[type]=l.cats[type].filter(x=>x!==c);LS.set("ledger",l);fillCatOptions();}
+function addRecord(catArg,amtArg,typeArg,noteArg){const type=typeArg||$("ldgType").value;const cat=catArg||$("ldgCat").value;const amt=parseFloat(amtArg!=null?amtArg:$("ldgAmt").value);const note=(noteArg!=null?noteArg:$("ldgNote").value).trim();if(!amt||amt<=0){toast("请输入有效金额");return;}const l=getLedger();l.records.unshift({id:Date.now(),date:todayStr(),type,cat,amt:+amt.toFixed(2),note});LS.set("ledger",l);$("ldgAmt").value="";$("ldgNote").value="";toast((type==="expense"?"支出":"收入")+" ¥"+amt.toFixed(2)+" 已记录");renderLedger();}
+function delRecord(id){const l=getLedger();l.records=l.records.filter(r=>r.id!==id);LS.set("ledger",l);renderLedger();}
+let pieChart=null;
+function renderLedger(){
+  $("ledgerDate").textContent=fmtCN(todayStr());
+  const l=getLedger();
+  const now=todayStr(),ym=now.slice(0,7),y=now.slice(0,4);
+  const exp=l.records.filter(r=>r.type==="expense");
+  const sum=a=>a.reduce((s,r)=>s+r.amt,0).toFixed(2);
+  $("dashMonth").textContent=sum(exp.filter(r=>r.date.startsWith(ym)));
+  $("dashToday").textContent=sum(exp.filter(r=>r.date===now));
+  $("dashYear").textContent=sum(exp.filter(r=>r.date.startsWith(y)));
+  $("dashCount").textContent=exp.filter(r=>r.date.startsWith(ym)).length;
+  $("ldgList").innerHTML=l.records.length?l.records.slice(0,50).map(r=>`<div class="ldg-item"><span class="muted" style="width:78px">${r.date.slice(5)}</span><span class="tag" style="background:#f4f5f9;color:#555a68">${r.cat}</span><span style="flex:1;margin-left:10px" class="muted">${esc(r.note||"")}</span><span class="${r.type==="income"?"amt-in":"amt-out"}">${r.type==="income"?"+":"-"}¥${r.amt.toFixed(2)}</span><button class="del-btn" onclick="delRecord(${r.id})">✕</button></div>`).join(""):'<div class="empty">暂无流水记录</div>';
+  const monthExp=exp.filter(r=>r.date.startsWith(ym));
+  const byCat={};
+  monthExp.forEach(r=>byCat[r.cat]=(byCat[r.cat]||0)+r.amt);
+  const labels=Object.keys(byCat),data=Object.values(byCat);
+  $("pieEmpty").style.display=labels.length?"none":"block";
+  if(typeof Chart==="undefined"){$("pieEmpty").style.display="block";$("pieEmpty").textContent="图表库未加载(需联网)";return;}
+  if(pieChart)pieChart.destroy();
+  if(!labels.length)return;
+  pieChart=new Chart($("pieChart"),{type:"doughnut",data:{labels,datasets:[{data,backgroundColor:["#7c5cfc","#a78bfa","#fb923c","#34d399","#f87171","#38b6c9","#e884b0","#8b8ba5","#c9a227","#5d7a3e","#a86432","#6272a4"],borderWidth:2,borderColor:"#fff"}]},options:{plugins:{legend:{position:"right",labels:{boxWidth:12,font:{size:12}}}},cutout:"55%",maintainAspectRatio:false}});
+}
+let recog=null,recording=false;
+function toggleVoice(){
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!SR){toast("当前浏览器不支持语音识别,建议使用 Edge/Chrome");return;}
+  if(recording){recog.stop();return;}
+  recog=new SR();recog.lang="zh-CN";recog.interimResults=false;
+  recog.onstart=()=>{recording=true;$("voiceBtn").classList.add("rec");$("voiceHint").textContent="正在聆听... 试着说:餐饮支出35元 咖啡";};
+  recog.onend=()=>{recording=false;$("voiceBtn").classList.remove("rec");};
+  recog.onerror=e=>{$("voiceHint").textContent="识别失败:"+e.error;};
+  recog.onresult=e=>{
+    const text=e.results[0][0].transcript;
+    $("voiceHint").textContent="识别结果:"+text;
+    parseVoice(text);
+  };
+  recog.start();
+}
+function parseVoice(text){
+  const l=getLedger();
+  const amtMatch=text.match(/(\d+(\.\d+)?)/);
+  if(!amtMatch){toast("未识别到金额,请重试");return;}
+  const amt=parseFloat(amtMatch[1]);
+  const isIncome=/收入|工资|进账|赚/.test(text);
+  const type=isIncome?"income":"expense";
+  let cat=l.cats[type].find(c=>text.includes(c)) || (isIncome?"其他":"其他");
+  const note=text.replace(/(\d+(\.\d+)?)(元|块|块钱)?/,"").replace(/支出|收入|花了|记账|记一笔/g,"").trim();
+  $("ldgType").value=type;fillCatOptions();
+  addRecord(cat,amt,type,note);
+}
+/* ====== 书签 ====== */
+let _bmCat="all";
+function getMyBookmarks(){return LS.get("bookmarks",[]);}
+function addBookmark(){let n=$("bmName").value.trim(),u=$("bmUrl").value.trim();if(!n||!u){toast("请填写名称和链接地址");return;}if(!/^https?:\/\//i.test(u))u="https://"+u;const list=getMyBookmarks();list.unshift({id:Date.now(),name:n,url:u});LS.set("bookmarks",list);$("bmName").value="";$("bmUrl").value="";_bmCat="mine";renderBookmarks();toast("书签已添加 ✅");}
+function delBookmark(id){if(!confirm("确定删除该书签？"))return;LS.set("bookmarks",getMyBookmarks().filter(b=>b.id!==id));renderBookmarks();toast("已删除");}
+function renderBookmarks(){
+  if(!$("bmList"))return;
+  $("proDate").textContent=fmtCN(todayStr());
+  $("bmCats").innerHTML=BM_CATS.map(c=>`<span class="chip ${_bmCat===c[0]?"on":""}" onclick="_bmCat='${c[0]}';renderBookmarks()">${c[1]}</span>`).join("");
+  const q=($("bmSearch").value||"").trim().toLowerCase();
+  const mine=getMyBookmarks().map(b=>({...b,cat:"mine",tags:"",mine:true}));
+  let all=[...BOOKMARK_DB,...mine];
+  if(_bmCat!=="all")all=all.filter(b=>b.cat===_bmCat);
+  if(q)all=all.filter(b=>(b.name+" "+(b.tags||"")+" "+b.url).toLowerCase().includes(q));
+  $("bmList").innerHTML=all.length?all.map(b=>`<a class="bm-card" href="${b.url}" target="_blank" rel="noopener noreferrer" title="${esc(b.name)}"><div class="bm-ico">${esc(b.name.charAt(0))}</div><div class="bm-info"><b>${esc(b.name)}</b><span>${esc(b.url.replace(/^https?:\/\//,"").replace(/\/$/,""))}</span></div><span class="bm-tag">${BM_CAT_NAME[b.cat]||""}</span>${b.mine?`<span class="bm-del" title="删除" onclick="event.preventDefault();event.stopPropagation();delBookmark(${b.id})">✕</span>`:""}</a>`).join(""):`<div class="muted" style="grid-column:1/-1;text-align:center;padding:36px 0">未找到匹配的书签，可在上方手动添加</div>`;
+}
+
+function overviewStatus(){
+  const t=todayStr();
+  const plan=loadPlan();
+  const planDone=plan.tasks.length>0&&plan.tasks.every(x=>x.done);
+  const planTxt=`${plan.tasks.filter(x=>x.done).length}/${plan.tasks.length} 项`;
+  const viewed=LS.get("viewed",{});const vp=(viewed.date===t&&viewed.pages)||[];
+  const ideaDone=LS.get("ideas",[]).some(i=>i.date===t);
+  const focusDone=LS.get("focusSessions",[]).some(f=>f.date===t);
+  const cultureDone=LS.get("culture",{lastDate:""}).lastDate===t;
+  const ledgerDone=getLedger().records.some(r=>r.date===t);
+  return [
+    {name:"每日计划",ok:planDone,txt:planDone?"全部完成":"已完成 "+planTxt},
+    {name:"新闻资讯",ok:vp.includes("news"),txt:vp.includes("news")?"今日已浏览":"未浏览"},
+    {name:"灵感记录",ok:ideaDone,txt:ideaDone?"今日已记录":"未记录"},
+    {name:"投资理财",ok:vp.includes("invest"),txt:vp.includes("invest")?"今日已浏览":"未浏览"},
+    {name:"专注计时",ok:focusDone,txt:focusDone?"今日已专注":"未专注"},
+    {name:"文化学习",ok:cultureDone,txt:cultureDone?"已打卡":"未打卡"},
+    {name:"财务记账",ok:ledgerDone,txt:ledgerDone?"今日已记账":"未记账"},
+    {name:"书签",ok:vp.includes("pro"),txt:vp.includes("pro")?"今日已使用":"未使用"}
+  ];
+}
+function openOverview(){$("ovDate").textContent=fmtCN(todayStr());const st=overviewStatus();const okN=st.filter(s=>s.ok).length;$("ovList").innerHTML=`<div style="margin-bottom:14px" class="muted">今日已完成 <b style="color:var(--accent);font-size:16px">${okN}</b> / 8 项</div>`+st.map(s=>`<div class="ov-item"><span class="ov-ico">${ICON_BY_NAME[s.name]||""}</span><span class="ov-dot ${s.ok?"ok":"no"}">${s.ok?"✓":"·"}</span><span>${s.name}</span><span class="st" style="color:${s.ok?"var(--green)":"var(--sub)"}">${s.txt}</span></div>`).join("");$("ovMask").classList.add("show");}
+function renderReading2(){$("readDate").textContent=fmtCN(todayStr());focusSecLeft=focusPresetMin*60;updateFocusUI();updateFocusStats();renderHabits();}
+function renderAll(){[renderPlan,syncPlanHistory,renderWork,renderReview,renderNews,renderIdeas,renderInvest,renderReading2,renderCulture,renderLedger,renderBookmarks,fillCatOptions,renderPlanCal,renderLedgerCal,renderIdeaCal,renderEnglish,renderStockInit].forEach(f=>{try{f();}catch(e){console.error("renderAll:",f.name,e);}});}
+/* ========== 新增模块数据 ========== */
+const NEW_POEMS=[
+ {q:"接天莲叶无穷碧,映日荷花别样红。",title:"晓出净慈寺送林子方",author:"杨万里",dyn:"宋",body:"毕竟西湖六月中,风光不与四时同。\\n接天莲叶无穷碧,映日荷花别样红。",intro:"杨万里,号诚斋,南宋诗人,中兴四大诗人之一,诗风清新活泼。",mean:"以六月西湖的荷塘盛景,写尽夏日的明丽与生机。",life:"杨万里(1127-1206),字廷秀,号诚斋,南宋诗人,一生作诗两万余首,善写田园与自然,语言通俗而富理趣。",tags:"夏天,荷花,西湖,风景,自然",src:"古诗文网"},
+ {q:"绿树阴浓夏日长,楼台倒影入池塘。",title:"山亭夏日",author:"高骈",dyn:"唐",body:"绿树阴浓夏日长,楼台倒影入池塘。\\n水晶帘动微风起,满架蔷薇一院香。",intro:"高骈,唐末节度使,亦能诗,写景清丽。",mean:"写夏日庭院的幽静与微风花香,闲适悠然。",life:"高骈(821-887),字千里,晚唐武将兼诗人,镇守淮南,诗风清雅。",tags:"夏天,夏日,风景,清凉",src:"诗词名句网"},
+ {q:"稻花香里说丰年,听取蛙声一片。",title:"西江月·夜行黄沙道中",author:"辛弃疾",dyn:"宋",body:"明月别枝惊鹊,清风半夜鸣蝉。\\n稻花香里说丰年,听取蛙声一片。",intro:"辛弃疾闲居江西乡间时所作,田园词代表作。",mean:"以夏夜稻香蛙声,写对丰收的喜悦与乡村的宁静。",life:"辛弃疾(1140-1207),字幼安,号稼轩,南宋豪放派词人,一生以恢复中原为志,闲居时多写田园闲适之作。",tags:"夏天,田园,乡村,丰收,自然",src:"古诗文网"},
+ {q:"清明时节雨纷纷,路上行人欲断魂。",title:"清明",author:"杜牧",dyn:"唐",body:"清明时节雨纷纷,路上行人欲断魂。\\n借问酒家何处有,牧童遥指杏花村。",intro:"杜牧,晚唐杰出诗人,与李商隐并称小李杜。",mean:"以清明春雨写行旅人的淡淡愁绪,画面感极强。",life:"杜牧(803-852),字牧之,晚唐诗人,诗风俊爽清丽,七绝尤工。",tags:"清明,春天,思乡,雨",src:"古诗文网"},
+ {q:"红豆生南国,春来发几枝。",title:"相思",author:"王维",dyn:"唐",body:"红豆生南国,春来发几枝。\\n愿君多采撷,此物最相思。",intro:"王维借红豆寄相思,唐代即广为传唱。",mean:"以红豆喻思念,含蓄深情,是写友情的名篇。",life:"王维(701-761),字摩诘,唐代山水田园诗派代表,亦精书画音律。",tags:"春天,思念,友情,红豆",src:"古诗文网"},
+ {q:"夕阳西下,断肠人在天涯。",title:"天净沙·秋思",author:"马致远",dyn:"元",body:"枯藤老树昏鸦,小桥流水人家,古道西风瘦马。\\n夕阳西下,断肠人在天涯。",intro:"马致远,元曲四大家之一,这首小令被誉为秋思之祖。",mean:"以一系列秋景意象叠加,写尽羁旅漂泊的孤愁。",life:"马致远(约1250-1321),号东篱,元代戏曲家、散曲大家,一生怀才不遇,多写隐逸与羁旅。",tags:"秋天,思乡,羁旅,黄昏",src:"中国诗歌网"}
+];
+const POEM_EXT={
+ "天生我材必有用,千金散尽还复来。":{life:"李白(701-762),字太白,号青莲居士,盛唐浪漫主义诗人,诗仙。少年任侠,出蜀漫游,曾任翰林供奉,后因傲岸权贵被赐金放还,晚年漂泊,卒于当涂。",tags:"自信,豪迈,人生,酒",src:"古诗文网"},
+ "竹杖芒鞋轻胜马,谁怕?一蓑烟雨任平生。":{life:"苏轼(1037-1101),字子瞻,号东坡居士,北宋文豪,唐宋八大家之一。一生屡遭贬谪,黄州、惠州、儋州皆留足迹,却旷达自适。",tags:"豁达,风雨,人生,逆境",src:"百度百科"},
+ "行到水穷处,坐看云起时。":{life:"王维(701-761),字摩诘,唐代山水田园诗派代表,亦精书画音律,晚年亦官亦隐于终南山、辋川。",tags:"禅意,隐居,自然,山水",src:"诗词名句网"},
+ "沉舟侧畔千帆过,病树前头万木春。":{life:"刘禹锡(772-842),字梦得,中唐诗人,因参与永贞革新被贬二十三年,诗风豪放,有诗豪之称。",tags:"乐观,希望,逆境,新陈代谢",src:"古诗文网"},
+ "会当凌绝顶,一览众山小。":{life:"杜甫(712-770),字子美,唐代现实主义诗人,诗圣。早年壮游,后陷安史之乱,漂泊西南,一生忧国忧民。",tags:"志向,雄心,登高,泰山",src:"古诗文网"},
+ "山重水复疑无路,柳暗花明又一村。":{life:"陆游(1125-1210),字务观,号放翁,南宋爱国诗人,力主抗金,诗作近万首,情怀沉郁。",tags:"转机,希望,乡村,哲理",src:"中国诗歌网"},
+ "海内存知己,天涯若比邻。":{life:"王勃(650-676),字子安,初唐四杰之首,少年英才,二十七岁溺海早逝。",tags:"友情,离别,知己,豁达",src:"古诗文网"},
+ "众里寻他千百度,蓦然回首,那人却在,灯火阑珊处。":{life:"辛弃疾(1140-1207),字幼安,号稼轩,南宋豪放派词人,一生以恢复中原为志,词风雄深。",tags:"爱情,追寻,境界,元宵",src:"诗词名句网"},
+ "生当作人杰,死亦为鬼雄。":{life:"李清照(1084-约1155),号易安居士,宋代婉约词宗,南渡后境遇孤苦,词风转为凄楚。",tags:"气节,爱国,壮志,项羽",src:"古诗文网"},
+ "野火烧不尽,春风吹又生。":{life:"白居易(772-846),字乐天,号香山居士,新乐府运动倡导者,诗风平易,号称诗魔。",tags:"坚韧,希望,生命,自然",src:"古诗文网"},
+ "欲穷千里目,更上一层楼。":{life:"王之涣(688-742),盛唐边塞诗人,仕途不达,性情豪放,传世之作寥寥却皆为名篇。",tags:"志向,登高,视野,哲理",src:"古诗文网"},
+ "采菊东篱下,悠然见南山。":{life:"陶渊明(约365-427),名潜,字元亮,东晋隐逸诗人之宗,不耐吏职,归隐田园,开田园诗一派。",tags:"隐居,悠然,自然,田园",src:"古诗文网"},
+ "但愿人长久,千里共婵娟。":{life:"苏轼中秋夜怀念其弟子由所作,以月喻人,旷达中见深情。",tags:"中秋,思念,亲情,月亮",src:"百度百科"},
+ "问君能有几多愁,恰是一江春水向东流。":{life:"李煜(937-978),南唐后主,工于词,国破被俘后词风哀婉,开宋词一代之风。",tags:"愁,亡国,思念,李煜",src:"古诗文网"},
+ "人生自古谁无死,留取丹心照汗青。":{life:"文天祥(1236-1283),南宋末丞相,抗元兵败被俘,宁死不屈,衣带中留正气歌。",tags:"爱国,气节,生死,忠烈",src:"古诗文网"},
+ "不畏浮云遮望眼,自缘身在最高层。":{life:"王安石(1021-1086),北宋政治家、文学家,主持变法,眼光高远,矢志改革。",tags:"志向,信心,登高,改革",src:"古诗文网"},
+ "莫愁前路无知己,天下谁人不识君。":{life:"高适(704-765),唐代边塞诗人,仕途晚成却建节镇守,诗风雄浑悲壮。",tags:"友情,离别,鼓励,豁达",src:"古诗文网"},
+ "千磨万击还坚劲,任尔东西南北风。":{life:"郑燮(1693-1765),号板桥,扬州八怪之一,为官清正,书画独绝,刚直不阿。",tags:"坚韧,品格,逆境,竹",src:"古诗文网"},
+ "劝君莫惜金缕衣,劝君惜取少年时。":{life:"杜秋娘,晚唐歌妓,一曲金缕衣劝人惜时,传唱千年。",tags:"惜时,青春,励志,珍惜",src:"古诗文网"},
+ "少壮不努力,老大徒伤悲。":{life:"汉乐府民歌,出自《长歌行》,以自然意象劝勉少年惜取光阴。",tags:"惜时,励志,青春,光阴",src:"中国诗歌网"}
+};
+const NEW_QUOTES=[
+ {t:"你所站立的地方,就是你的中国;你怎样,中国便怎样。",s:"央视新闻"},
+ {t:"没有一个冬天不可逾越,没有一个春天不会来临。",s:"央视新闻"},
+ {t:"种一棵树最好的时间是十年前,其次是现在。",s:"《要领》约翰·汉尼斯"},
+ {t:"我们都是孤独的,但孤独不是用来战胜的,而是用来相处的。",s:"《被讨厌的勇气》"},
+ {t:"人生就像骑单车,想保持平衡就得往前走。",s:"阿尔伯特·爱因斯坦"},
+ {t:"世上只有一种英雄主义,就是在认清生活真相后依然热爱生活。",s:"罗曼·罗兰《约翰·克利斯朵夫》"},
+ {t:"你的时间有限,不要为别人而活。",s:"史蒂夫·乔布斯"},
+ {t:"只有极其努力,才能看起来毫不费力。",s:"央视新闻"},
+ {t:"通往山顶的路,往往最不拥挤。",s:"《跃迁》古典"},
+ {t:"把每一件简单的事做好就是不简单,把每一件平凡的事做好就是不平凡。",s:"张瑞敏"},
+ {t:"别因为走得太远,而忘记为什么出发。",s:"《人民政协报》"},
+ {t:"真正的顺其自然,是竭尽全力之后的不强求。",s:"《半山文集》"},
+ {t:"自律给我自由。",s:"康德(常被引述)"},
+ {t:"我们终将浑然难分,像水溶于水。",s:"《看见》柴静"}
+];
+const MAO_EXT={
+ "谁是我们的敌人?谁是我们的朋友?这个问题是革命的首要问题。":{ctx:"出自《中国社会各阶级的分析》开篇,当时党内对革命依靠谁、联合谁认识模糊。",mean:"分清敌友是革命首要问题,做任何事也先要明确核心矛盾与同盟。",bg:"1925年国共合作时期,毛泽东深入调研社会各阶层,奠定阶级分析的方法论。"},
+ "枪杆子里面出政权。":{ctx:"八七会议上针对陈独秀右倾妥协的总结。",mean:"革命政权必须以武装斗争为支柱。",bg:"1927年大革命失败,中共以血的教训换来这一论断,从此走向武装割据。"},
+ "星星之火,可以燎原。":{ctx:"以回信形式答复林彪等对革命前途的悲观疑问。",mean:"革命力量虽小,却具燎原之势,不可轻视。",bg:"1930年井冈山艰困时期,毛泽东以此鼓舞士气,坚定走农村包围城市之路。"},
+ "没有调查就没有发言权。":{ctx:"《反对本本主义》核心观点,批判照搬书本与教条。",mean:"一切结论须建立在实地调查之上。",bg:"1930年毛泽东提倡实事求是,反对脱离实际的本本主义。"},
+ "真正的铜墙铁壁是什么?是群众,是千百万真心实意地拥护革命的群众。":{ctx:"《关心群众生活,注意工作方法》中论述战争伟力根源。",mean:"人民群众才是不可摧毁的力量。",bg:"1934年反围剿背景下,强调发动群众的工作方法。"},
+ "长征是宣言书,长征是宣传队,长征是播种机。":{ctx:"《论反对日本帝国主义的策略》中评价长征意义。",mean:"长征宣告了红军意志与政治主张的传播。",bg:"1935年长征胜利后,毛泽东在陕北总结其战略与政治意义。"},
+ "我们中华民族有同自己的敌人血战到底的气概。":{ctx:"《论反对日本帝国主义的策略》号召全民抗战。",mean:"中华民族有不屈服的抗争精神。",bg:"1935年民族危机深重,呼吁停止内战一致对外。"},
+ "你要知道梨子的滋味,你就得变革梨子,亲口吃一吃。":{ctx:"《实践论》中以吃梨说明认识来源于实践。",mean:"真知来自亲身的实践。",bg:"1937年延安,毛泽东系统阐述马克思主义认识论。"},
+ "共产党员决不可脱离群众的多数。":{ctx:"《中国共产党在民族战争中的地位》强调党群关系。",mean:"党员须扎根群众多数。",bg:"1938年六届六中全会,确立党建与群众路线。"},
+ "我们共产党人好比种子,人民好比土地。":{ctx:"《关于重庆谈判》中比喻党员与人民的关系。",mean:"党员要到群众中去生根开花。",bg:"1945年抗战胜利后,号召干部下沉地方发动群众。"},
+ "我们都是来自五湖四海,为了一个共同的革命目标,走到一起来了。":{ctx:"《为人民服务》中张思德追悼会的讲演。",mean:"为共同目标汇聚,要彼此团结。",bg:"1944年,毛泽东借普通战士之死阐明宗旨。"},
+ "一切反动派都是纸老虎。":{ctx:"同美国记者安娜·路易斯·斯特朗的谈话。",mean:"貌似强大的敌人本质虚弱。",bg:"1946年内战将起,以战略藐视鼓舞信心。"},
+ "在战略上要藐视敌人,在战术上要重视敌人。":{ctx:"关于作战方针的论述,后收入《毛泽东选集》。",mean:"全局上敢胜利,具体上要重视。",bg:"1948年解放战争转折点,提出战略战术辩证法。"},
+ "人民,只有人民,才是创造世界历史的动力。":{ctx:"《论联合政府》中阐发历史动力。",mean:"人民是历史的创造者。",bg:"1945年七大,规划抗战胜利后的建国纲领。"},
+ "自从有了中国共产党,中国革命的面目就焕然一新了。":{ctx:"《全世界革命力量团结起来,反对帝国主义的侵略》论断。",mean:"中共使中国革命面貌焕然一新。",bg:"1948年解放战争胜利在望,总结党建意义。"},
+ "十月革命一声炮响,给我们送来了马克思列宁主义。":{ctx:"《论人民民主专政》回顾思想渊源。",mean:"马列主义经十月革命传入中国。",bg:"1949年建国前夕,论述政权性质与来路。"},
+ "夺取全国胜利,这只是万里长征走完了第一步。":{ctx:"《在中国共产党第七届中央委员会第二次全体会议上的报告》。",mean:"胜利后更艰险的建设才刚开始。",bg:"1949年西柏坡,告诫全党戒骄戒躁、保持清醒。"},
+ "我们不但善于破坏一个旧世界,我们还将善于建设一个新世界。":{ctx:"同上为建国后的建设指明方向。",mean:"共产党人也能建设新世界。",bg:"1949年,从革命党转向执政党的自我期许。"},
+ "中国人从此站立起来了。":{ctx:"全国政协一届全体会议开幕词。",mean:"中华民族结束屈辱、独立自主。",bg:"1949年9月,宣告新中国即将诞生,举国振奋。"},
+ "为人民服务,一刻也不脱离群众。":{ctx:"《论联合政府》《为人民服务》一贯宗旨。",mean:"党的根基在人民。",bg:"1944-1945年,确立党的根本宗旨。"},
+ "群众是真正的英雄,而我们自己则往往是幼稚可笑的。":{ctx:"《农村调查》的序言和跋批评轻视群众。",mean:"智慧在群众之中,须向群众学习。",bg:"1941年延安整风,倡导调查研究与群众观点。"},
+ "凡是要夺取政权、巩固政权的共产党人都应研究这一规律。":{ctx:"《战争和战略问题》论述武装斗争规律。",mean:"执政党须研究战争与政权规律。",bg:"1938年,总结中国革命以武装斗争为主要形式。"},
+ "学习的敌人是自己的满足,要认真学习一点东西,必须从不自满开始。":{ctx:"《中国共产党在延安干部会议上讲话》勉励学习。",mean:"学无止境,须从不自满始。",bg:"1938年,号召干部在战争中学习战争。"},
+ "人是要有一点精神的。":{ctx:"《在中国共产党全国宣传工作会议上的讲话》勉励志向。",mean:"人要有精神追求与骨气。",bg:"1957年,强调思想与精神状态的重要。"},
+ "一万年太久,只争朝夕。":{ctx:"《满江红·和郭沫若同志》词句。",mean:"做事要抓紧当下,不空待久远。",bg:"1963年,表达反帝斗志与时不我待的紧迫。"},
+ "数风流人物,还看今朝。":{ctx:"《沁园春·雪》末句,纵论古今人物。",mean:"今朝英雄胜过历代。",bg:"1936年红军东征途中,抒写伟岸气概。"},
+ "雄关漫道真如铁,而今迈步从头越。":{ctx:"《忆秦娥·娄山关》写攻克娄山关。",mean:"莫道雄关难越,迈步从头。",bg:"1935年遵义会议后,红军重获主动的豪情。"},
+ "自信人生二百年,会当水击三千里。":{ctx:"《七古·残句》抒怀之作。",mean:"以豪情面对人生征途。",bg:"1917年青年毛泽东,壮志凌云。"},
+ "一切从人民的利益出发,而不是从个人或小集团的利益出发。":{ctx:"《论联合政府》阐明出发点。",mean:"办事须以人民利益为准绳。",bg:"1945年七大,明确价值立场。"},
+ "我们的权力是谁给的?是工人阶级给的,是贫下中农给的,是占人口百分之九十以上的广大劳动群众给的。":{ctx:"《抗日战争胜利后的时局和我们的方针》论权力来源。",mean:"权力来自人民,须为人民服务。",bg:"1945年,重申执政为民的根本。"},
+ "党的路线,就是人民的路线。":{ctx:"《论联合政府》论党群一致。",mean:"党的主张与人民意志统一。",bg:"1945年,阐释党的政治路线根基。"},
+ "我们共产党人好比种子,人民好比土地。到一个地方就要同那里的人民结合起来。":{ctx:"《关于重庆谈判》进一步展开的群众观点。",mean:"党员须融入群众、生根结果。",bg:"1945年,号召干部深入地方发动群众。"},
+ "学习的敌人是自己的满足,要认真学习一点东西,必须从不自满开始。":{ctx:"《中国共产党在延安干部会议上讲话》勉励学习。",mean:"学习须从不自满开始。",bg:"1938年,勉励干部边干边学。"}
+};
+const BOOKS=[
+ {title:"非暴力沟通",author:"马歇尔·卢森堡",cat:"人际沟通",emoji:"🤝",color:"#7c5cfc",intro:"用观察、感受、需要、请求四步,化解冲突、拉近关系。",chapters:[{h:"第一章 让爱融入生活",ps:["暴力的根源在于人们忽视彼此的感受与需要,而将冲突归咎于对方。","非暴力沟通提醒我们:无论作何事,都先与生命赋予的善意相连。"]},{h:"第四章 体会与表达感受",ps:["示弱有助于解决冲突,当我们坦诚说出感受,对方往往更易放下防备。","区分感受与想法:我觉得被忽视是想法,我感到孤单才是感受。"]}]},
+ {title:"人性的弱点",author:"戴尔·卡耐基",cat:"人际沟通",emoji:"💡",color:"#fb923c",intro:"讲述如何赢得他人信任、避免批评、真诚赞赏。",chapters:[{h:"待人的基本技巧",ps:["如果你想让别人喜欢你,先对他人抱以真诚的兴趣。","避免批评、指责与抱怨,因为它们只会招来抵触。"]},{h:"如何让他人认同你",ps:["与其直接指出错误,不如先肯定对方值得称道之处。","谈论对方感兴趣的事,是打开话题的钥匙。"]}]},
+ {title:"沟通的艺术",author:"罗纳德·阿德勒",cat:"人际沟通",emoji:"🗣️",color:"#a78bfa",intro:"从看入人里、看出人外到看人之间,拆解人际沟通。",chapters:[{h:"倾听的艺术",ps:["倾听不是等待发言,而是真正试图理解对方的世界。","以同理心回应对方,比急于给建议更有力量。"]},{h:"非语言沟通",ps:["表情、姿态、距离,往往比话语更早透露真相。","保持一致的非语言信号,信任才会建立。"]}]},
+ {title:"小狗钱钱",author:"博多·舍费尔",cat:"财商",emoji:"🐕",color:"#34d399",intro:"用理财童话讲透储蓄、复利与财富思维,大人也适用。",chapters:[{h:"写下愿望与目标",ps:["准备梦想相册与梦想储蓄罐,让目标可视化。","每天记录成功日记,训练发现机会的眼光。"]},{h:"养一只会下金蛋的鹅",ps:["把收入的一部分长期储蓄,这只鹅会持续为你生息。","区分想要与需要,量入为出。"]}]},
+ {title:"富爸爸穷爸爸",author:"罗伯特·清崎",cat:"财商",emoji:"💰",color:"#f59e0b",intro:"以两个爸爸的对照,讲透资产与负债、财商与自由。",chapters:[{h:"富人不为钱工作",ps:["穷人为钱工作,富人让钱为自己工作。","真正的资产是能把钱放进你口袋的东西。"]},{h:"关注资产而非收入",ps:["买负债让你更穷,买资产让你更富。","先支付自己:优先投资,再支付开销。"]}]},
+ {title:"纳瓦尔宝典",author:"纳瓦尔·拉维坎特",cat:"财商",emoji:"🧠",color:"#38b6c9",intro:"关于财富与幸福的推文结集,讲求专长、杠杆与复利。",chapters:[{h:"财富与金钱不同",ps:["财富是睡梦中仍为你赚钱的资产,金钱只是交换媒介。","用专长和杠杆放大产出。"]},{h:"幸福是一种技能",ps:["幸福是可以习得的当下状态,而非未来的奖赏。","减少欲望、专注当下,是低成本的富足。"]}]},
+ {title:"朝花夕拾",author:"鲁迅",cat:"散文",emoji:"🌿",color:"#8b8ba5",intro:"回忆性散文集,从百草园到三味书屋,温情与锋芒并存。",chapters:[{h:"从百草园到三味书屋",ps:["不必说碧绿的菜畦,光滑的石井栏,高大的皂荚树,单是泥墙根一带就有无限趣味。","私塾里的读书生活,严肃中透着孩子的天性。"]},{h:"藤野先生",ps:["他的性格,在我的眼里和心里是伟大的。","异国求学时一份纯粹的师恩,铭感至今。"]}]},
+ {title:"我与地坛",author:"史铁生",cat:"散文",emoji:"🍂",color:"#c9a227",intro:"在轮椅上与地坛的对话,写尽生命、苦难与母亲。",chapters:[{h:"我与地坛",ps:["地坛向我历数春光秋雨,我在其中读懂了生与死。","死是一件不必急于求成的事,它是一个必然会降临的节日。"]},{h:"母亲",ps:["她心里太苦了,上帝看她受不住了,就召她回去。","儿女的不幸在母亲那儿总是要加倍。"]}]},
+ {title:"汪曾祺散文",author:"汪曾祺",cat:"散文",emoji:"🍵",color:"#5d7a3e",intro:"谈吃、谈草木、谈故人,文字淡而有味,烟火气里见性情。",chapters:[{h:"故乡的食物",ps:["高邮的咸鸭蛋,质细而油多,筷子头一扎,红油就冒出来。","食物里藏着最深的乡愁。"]},{h:"人间草木",ps:["一定要爱着点什么,恰似草木对光阴的钟情。","看花看草,也是看自己安稳的心。"]}]}
+];
+const STOCK_DB=[
+ {code:"sh600519",name:"贵州茅台",py:"maotai",ind:"白酒",intro:"高端白酒龙头,品牌壁垒极强,现金流充沛。",hl:["飞天茅台供不应求,定价权稳固","高毛利、高ROE,分红稳定","受消费景气与批价波动影响"]},
+ {code:"sz000858",name:"五粮液",py:"wuliangye",ind:"白酒",intro:"浓香型白酒代表,全国化布局完善。",hl:["千元价格带核心单品","渠道改革持续推进","受益宴席与礼赠需求"]},
+ {code:"sz300750",name:"宁德时代",py:"ningde",ind:"电池",intro:"全球动力电池龙头,技术与产能双领先。",hl:["麒麟电池、神行电池持续迭代","海外车企订单放量","原材料价格影响毛利"]},
+ {code:"sz002594",name:"比亚迪",py:"byd",ind:"汽车",intro:"新能源汽车全产业链一体化龙头。",hl:["垂直整合带来成本优势","DM-i与高端品牌双线发力","出口与智能化是看点"]},
+ {code:"sh601318",name:"中国平安",py:"zhongguopingan",ind:"保险",intro:"综合金融集团,寿险改革深化中。",hl:["保险+银行+资管协同","代理人渠道提质增效","投资端受权益市场影响"]},
+ {code:"sh600036",name:"招商银行",py:"zhaoshang",ind:"银行",intro:"零售银行标杆,资产质量稳健。",hl:["零售客群与财富管理领先","不良率长期可控","息差下行是行业共性压力"]},
+ {code:"sh601398",name:"工商银行",py:"gongshang",ind:"银行",intro:"全球资产规模最大的商业银行之一。",hl:["对公与零售均衡","分红稳定,估值低","让利实体影响息差"]},
+ {code:"sz300059",name:"东方财富",py:"dongfangcaifu",ind:"券商",intro:"互联网券商龙头,流量与牌照兼备。",hl:["天天基金代销规模居前","行情活跃度决定业绩弹性","AI投顾等新业务探索"]},
+ {code:"sh600030",name:"中信证券",py:"zhongxin",ind:"券商",intro:"头部券商,投行业务领先。",hl:["机构业务与并购重组优势","受益资本市场改革","业绩随市场波动"]},
+ {code:"sh601012",name:"隆基绿能",py:"longji",ind:"光伏",intro:"单晶硅片与组件龙头。",hl:["BC电池技术布局","行业产能过剩致盈利承压","海外需求与降本是关键"]},
+ {code:"sh600438",name:"通威股份",py:"tongwei",ind:"光伏",intro:"硅料与电池片双龙头。",hl:["硅料成本优势明显","产业链一体化延伸","价格周期波动大"]},
+ {code:"sh600900",name:"长江电力",py:"changjiangdianli",ind:"电力",intro:"全球最大水电上市公司,稳健蓝筹。",hl:["六座梯级电站联合调度","现金流与分红极稳","来水丰枯影响发电量"]},
+ {code:"sz000725",name:"京东方A",py:"jingdongfang",ind:"面板",intro:"半导体显示龙头,多领域市占领先。",hl:["LCD与OLED双布局","车载与IT面板增量","面板价格周期影响盈利"]},
+ {code:"sz002475",name:"立讯精密",py:"lixun",ind:"电子",intro:"消费电子精密制造龙头。",hl:["苹果产业链核心供应商","汽车与通信业务第二曲线","客户集中度风险"]},
+ {code:"sz000333",name:"美的集团",py:"meidi",ind:"家电",intro:"白电龙头,全球化与多元化并进。",hl:["ToB与机器人业务拓展","海外OBM占比提升","地产链需求拖累"]},
+ {code:"sz000651",name:"格力电器",py:"geli",ind:"家电",intro:"空调龙头,渠道与品牌稳固。",hl:["高分红、低估值","主业多元化仍在探索","地产与天气影响空调销售"]},
+ {code:"sh600887",name:"伊利股份",py:"yili",ind:"食品",intro:"乳业龙头,全品类布局。",hl:["常温白奶与奶粉双轮","成本端原奶价格回落利好","消费疲软影响高端"]},
+ {code:"sh603288",name:"海天味业",py:"haitian",ind:"食品",intro:"调味品龙头,渠道深入下沉。",hl:["酱油市占领先","提价与结构升级","库存修复进行中"]},
+ {code:"sh603259",name:"药明康德",py:"yaoming",ind:"医药",intro:"全球领先医药研发外包平台。",hl:["一体化赋能模式稀缺","海外政策与订单波动","产能利用率是核心"]},
+ {code:"sh600276",name:"恒瑞医药",py:"hengrui",ind:"医药",intro:"创新药龙头,研发管线深厚。",hl:["重磅品种持续获批","国际化授权兑现","集采影响边际减弱"]},
+ {code:"sz300760",name:"迈瑞医疗",py:"mirui",ind:"医疗",intro:"医疗器械平台型龙头。",hl:["监护、影像、体外诊断三线","海外高端客户突破","新基建与下沉市场驱动"]},
+ {code:"sh600031",name:"三一重工",py:"sany",ind:"机械",intro:"工程机械龙头,全球化加速。",hl:["电动化与智能化领先","海外市场高增","国内地产链拖累"]},
+ {code:"sh688981",name:"中芯国际",py:"zhongxin",ind:"半导体",intro:"大陆晶圆代工龙头。",hl:["先进制程与特色工艺并进","国产替代刚需","资本开支与折旧压力大"]},
+ {code:"sz002371",name:"北方华创",py:"beifanghuachuang",ind:"半导体",intro:"半导体设备平台型公司。",hl:["刻蚀、沉积等多品类突破","晶圆厂扩产直接受益","估值随订单波动"]},
+ {code:"sz002230",name:"科大讯飞",py:"keda",ind:"人工智能",intro:"智能语音与认知智能龙头。",hl:["星火大模型行业落地","教育、医疗场景深厚","算力与研发投入高"]},
+ {code:"sh601360",name:"三六零",py:"360",ind:"网络安全",intro:"互联网安全与AI应用服务商。",hl:["安全大脑与政企安全","AI搜索等新业务探索","广告与游戏承压"]},
+ {code:"sz300033",name:"同花顺",py:"tonghuashun",ind:"软件",intro:"金融信息服务平台,流量优势明显。",hl:["AI投顾与i问财布局","行情活跃度决定弹性","监管合规要求高"]},
+ {code:"sh600309",name:"万华化学",py:"wanhua",ind:"化工",intro:"MDI全球龙头,新材料拓展中。",hl:["一体化成本优势","石化与新材料第二曲线","产品价格周期波动"]},
+{code:"sz300179",name:"四方达",py:"sifangda",ind:"超硬材料",intro:"人造金刚石龙头,CVD培育钻石与功能金刚石拓展。",hl:["CVD培育钻石技术领先","功能金刚石向半导体延伸","受益培育钻石消费升级"]},
+{code:"sz002415",name:"海康威视",py:"haikang",ind:"安防",intro:"全球视频监控龙头,AI开放平台赋能。",hl:["AI开放平台赋能","创新业务高增","海外与EBG复苏"]},
+{code:"sh601888",name:"中国中免",py:"zhongmian",ind:"旅游零售",intro:"免税龙头,海南离岛与机场免税双轮。",hl:["海南离岛免税牌照优势","机场租金重签利好","出境恢复带来弹性"]},
+{code:"sh601633",name:"长城汽车",py:"changcheng",ind:"汽车",intro:"SUV与新能源出海整车厂。",hl:["坦克与魏品牌高端化","海外销量高增","智能驾驶布局"]},
+{code:"sz002466",name:"天齐锂业",py:"tianqi",ind:"锂电",intro:"锂资源龙头,上游锂矿自给。",hl:["优质锂矿资源自给","氢氧化锂产能扩张","锂价周期影响盈利"]},
+{code:"sz002460",name:"赣锋锂业",py:"ganfeng",ind:"锂电",intro:"锂电全产业链布局。",hl:["锂矿与锂盐一体化","固态电池前瞻布局","回收业务成长"]},
+{code:"sh600089",name:"特变电工",py:"tebian",ind:"电力设备",intro:"输变电龙头+多晶硅新业务。",hl:["特高压变压器龙头","多晶硅产能扩张","新能源EPC贡献"]},
+{code:"sh601628",name:"中国人寿",py:"renshou",ind:"保险",intro:"寿险巨头,康养生态布局。",hl:["寿险新单结构改善","投资端受益权益市场","代理人提质增效"]},
+{code:"sh600000",name:"浦发银行",py:"pufa",ind:"银行",intro:"全国性股份制银行。",hl:["对公业务基础扎实","分红稳定","息差承压"]},
+{code:"sz000001",name:"平安银行",py:"pinganan",ind:"银行",intro:"零售转型银行。",hl:["零售与财富管理","对公发力","资产质量改善"]},
+{code:"sh601166",name:"兴业银行",py:"xingye",ind:"银行",intro:"同业与绿色金融特色银行。",hl:["同业与投行优势","绿色金融领先","息差边际改善"]},
+{code:"sz002714",name:"牧原股份",py:"muyuan",ind:"养殖",intro:"生猪自繁自养龙头。",hl:["自繁自养成本领先","产能稳步扩张","猪价周期影响盈利"]},
+{code:"sh600436",name:"片仔癀",py:"pianzaihuang",ind:"中药",intro:"名贵中成药,品牌壁垒强。",hl:["品牌壁垒强","核心产品提价能力","日化业务拓展"]},
+{code:"sz000538",name:"云南白药",py:"baiyao",ind:"中药",intro:"中华老字号,大健康布局。",hl:["白药系列品牌力","大健康业务布局","混改释放活力"]}
+];
+const EN_WORDS=[
+ {w:"schedule",ph:"/ˈskedʒuːl/",pos:"n./v.",cn:"日程；安排",ex:"Let us schedule a meeting for tomorrow.",ex_cn:"我们把会议安排在明天吧。",cat:"daily"},
+ {w:"deadline",ph:"/ˈdedlaɪn/",pos:"n.",cn:"截止日期",ex:"Please send the report before the deadline.",ex_cn:"请在截止日期前提交报告。",cat:"daily"},
+ {w:"meeting",ph:"/ˈmiːtɪŋ/",pos:"n.",cn:"会议",ex:"We have a team meeting every Monday.",ex_cn:"我们每周一开团队会议。",cat:"daily"},
+ {w:"feedback",ph:"/ˈfiːdbæk/",pos:"n.",cn:"反馈",ex:"Thank you for your helpful feedback.",ex_cn:"感谢你很有帮助的反馈。",cat:"daily"},
+ {w:"remote",ph:"/rɪˈməʊt/",pos:"adj.",cn:"远程的",ex:"I prefer remote work on Fridays.",ex_cn:"我周五更喜欢远程办公。",cat:"daily"},
+ {w:"overtime",ph:"/ˈəʊvətaɪm/",pos:"n.",cn:"加班",ex:"He is working overtime to finish the project.",ex_cn:"他在加班赶项目。",cat:"daily"},
+ {w:"commute",ph:"/kəˈmjuːt/",pos:"n./v.",cn:"通勤",ex:"My daily commute takes one hour.",ex_cn:"我每天通勤要一小时。",cat:"daily"},
+ {w:"colleague",ph:"/ˈkɒliːɡ/",pos:"n.",cn:"同事",ex:"My colleague helped me with the task.",ex_cn:"同事帮我完成了任务。",cat:"daily"},
+ {w:"budget",ph:"/ˈbʌdʒɪt/",pos:"n.",cn:"预算",ex:"We need to control the monthly budget.",ex_cn:"我们要控制月度预算。",cat:"daily"},
+ {w:"invoice",ph:"/ˈɪnvɔɪs/",pos:"n.",cn:"发票；账单",ex:"Please issue an invoice after payment.",ex_cn:"付款后请开具发票。",cat:"daily"},
+ {w:"discount",ph:"/ˈdɪskaʊnt/",pos:"n.",cn:"折扣",ex:"Members get a ten percent discount.",ex_cn:"会员享九折优惠。",cat:"daily"},
+ {w:"refund",ph:"/ˈriːfʌnd/",pos:"n./v.",cn:"退款",ex:"You can apply for a full refund.",ex_cn:"你可以申请全额退款。",cat:"daily"},
+ {w:"shipping",ph:"/ˈʃɪpɪŋ/",pos:"n.",cn:"运费；发货",ex:"The shipping fee is included.",ex_cn:"运费已包含在内。",cat:"daily"},
+ {w:"warranty",ph:"/ˈwɒrənti/",pos:"n.",cn:"保修",ex:"This product has a two-year warranty.",ex_cn:"本产品享两年保修。",cat:"daily"},
+ {w:"balance",ph:"/ˈbæləns/",pos:"n.",cn:"余额；平衡",ex:"Check your account balance online.",ex_cn:"可在线上查询账户余额。",cat:"daily"},
+ {w:"quotation",ph:"/kwəʊˈteɪʃ(ə)n/",pos:"n.",cn:"报价",ex:"We received your quotation yesterday.",ex_cn:"我们昨日收到贵方报价。",cat:"trade"},
+ {w:"sample",ph:"/ˈsɑːmp(ə)l/",pos:"n.",cn:"样品",ex:"Could you send a free sample?",ex_cn:"能否寄送免费样品？",cat:"trade"},
+ {w:"MOQ",ph:"/ˌem əʊ ˈkjuː/",pos:"abbr.",cn:"最小起订量",ex:"Our MOQ is five hundred pieces.",ex_cn:"我方最小起订量为五百件。",cat:"trade"},
+ {w:"lead time",ph:"/liːd taɪm/",pos:"n.",cn:"交货周期",ex:"The lead time is about three weeks.",ex_cn:"交货周期约三周。",cat:"trade"},
+ {w:"FOB",ph:"/ef əʊ biː/",pos:"abbr.",cn:"离岸价",ex:"The price is on FOB Shanghai basis.",ex_cn:"价格以上海离岸价为准。",cat:"trade"},
+ {w:"CIF",ph:"/siː aɪ ef/",pos:"abbr.",cn:"到岸价",ex:"We prefer CIF terms for this order.",ex_cn:"此单我们偏好到岸价条款。",cat:"trade"},
+ {w:"L/C",ph:"/el ˈsiː/",pos:"abbr.",cn:"信用证",ex:"Payment by L/C at sight is acceptable.",ex_cn:"可接受即期信用证付款。",cat:"trade"},
+ {w:"T/T",ph:"/tiː ˈtiː/",pos:"abbr.",cn:"电汇",ex:"A thirty percent T/T deposit is required.",ex_cn:"需付百分之三十电汇定金。",cat:"trade"},
+ {w:"shipment",ph:"/ˈʃɪpmənt/",pos:"n.",cn:"装运；货件",ex:"The first shipment will leave next week.",ex_cn:"第一批货下周发运。",cat:"trade"},
+ {w:"customs",ph:"/ˈkʌstəmz/",pos:"n.",cn:"海关",ex:"The goods are cleared through customs.",ex_cn:"货物已通过海关清关。",cat:"trade"},
+ {w:"tariff",ph:"/ˈtærɪf/",pos:"n.",cn:"关税",ex:"The new tariff affects our cost.",ex_cn:"新关税影响了我们的成本。",cat:"trade"},
+ {w:"container",ph:"/kənˈteɪnə/",pos:"n.",cn:"集装箱",ex:"We booked a twenty-foot container.",ex_cn:"我们订了一个二十尺柜。",cat:"trade"},
+ {w:"port",ph:"/pɔːt/",pos:"n.",cn:"港口",ex:"Goods will be delivered to the port.",ex_cn:"货物将运抵港口。",cat:"trade"},
+ {w:"inspection",ph:"/ɪnˈspekʃ(ə)n/",pos:"n.",cn:"检验",ex:"A third-party inspection is required.",ex_cn:"需第三方检验。",cat:"trade"},
+ {w:"negotiation",ph:"/nɪˌɡəʊʃiˈeɪʃ(ə)n/",pos:"n.",cn:"谈判",ex:"Price negotiation takes time.",ex_cn:"价格谈判需要时间。",cat:"trade"}
+];
+try{POEMS.push.apply(POEMS,NEW_POEMS);}catch(e){}
+try{QUOTES.push.apply(QUOTES,NEW_QUOTES);}catch(e){}
+
+/* ========== 诗词关键词搜索 ========== */
+function renderPoemList(){
+  const kw=($("poemSearch")?.value||"").trim().toLowerCase();
+  const learned=getLearnedSet();
+  let list=POEMS;
+  if(kw){
+    const hit=POEMS.filter(p=>{const pe=POEM_EXT[p.q]||{};return (p.title+p.author+p.dyn+(pe.tags||"")+(p.body||"")).toLowerCase().includes(kw);});
+    list=hit.length?hit:POEMS;
+  }else{
+    list=getShuffled(POEMS).slice(0,20);
+  }
+  curPoemList=list;
+  const box=$("cultureContent");
+  if(!list.length){box.innerHTML='<div class="empty">没有匹配的诗词，换个关键词试试</div>';return;}
+  box.innerHTML='<div class="cul-grid">'+list.map((p,i)=>{
+    const pe=POEM_EXT[p.q]||{};const p2=Object.assign({},p,pe);
+    const key="p"+i;const done=learned[key];
+    return `<div class="cul-card"><div class="q" onclick="toggleCF('cfr${i}')">${esc(p2.q)}</div><div class="src" onclick="toggleCF('cfr${i}')">—— ${p2.dyn} · ${esc(p2.author)}《${esc(p2.title)}》${p2.src?' · '+esc(p2.src):''}</div><div class="cul-full" id="cfr${i}"><h4>全文</h4><p>${esc(p2.body)}</p><h4>作者简介</h4><p>${esc(p2.intro)}</p><h4>生平发展脉络与主要经历</h4><p>${esc(p2.life||p2.intro)}</p><h4>释义赏析</h4><p>${esc(p2.mean)}</p></div><div class="acts"><button class="tts-btn" id="tts${i}" onclick="event.stopPropagation();speakText(${i})">🔊 朗读</button><button class="learned-btn ${done?"done":""}" onclick="event.stopPropagation();toggleLearned('${key}','p${i}',this)">${done?"✓ 已学习":"已学习"}</button></div></div>`;
+  }).join("")+'</div>';
+  if(kw&&list===POEMS)$("cultureNotice").textContent="未找到完全匹配，已为你展示全部诗词。";
+}
+
+/* ========== 爆款视频：平台搜索深链 ========== */
+function openPlatformSearch(plat){
+  const kw=($("videoKw")?.value||"").trim();
+  const q=kw||"AI 爆款 短视频";
+  if(plat==="bilibili")window.open("https://search.bilibili.com/all?keyword="+encodeURIComponent(q));
+  else window.open("https://www.douyin.com/search/"+encodeURIComponent(q));
+}
+
+/* ========== 投资理财：股票搜索 ========== */
+let _enqSeq=0;
+function clearEnqScripts(){document.querySelectorAll(".enqscript").forEach(e=>e.remove());}
+function setQuoteBox(code,price,yclose){
+  const box=$("sq-"+code);if(!box)return;
+  if(price==null||isNaN(price)){box.innerHTML='<a class="muted" style="font-size:11px" href="https://quote.eastmoney.com/'+code+'.html" target="_blank" rel="noopener">查看行情 ↗</a>';return;}
+  const chg=price-yclose;const pct=yclose?(chg/yclose*100):0;
+  const up=chg>=0;const col=up?"var(--red)":"var(--green)";const arrow=up?"▲":"▼";
+  box.innerHTML='<div style="font-size:18px;font-weight:800;color:'+col+'">¥'+price.toFixed(2)+'</div><div style="font-size:12px;color:'+col+'">'+arrow+' '+(chg>=0?"+":"")+chg.toFixed(2)+' ('+(pct>=0?"+":"")+pct.toFixed(2)+'%)</div>';
+}
+function loadStockQuotes(list){
+  clearEnqScripts();
+  if(!list.length)return;
+  const codes=list.map(s=>s.code).join(",");
+  const el=document.createElement("script");el.className="enqscript";el.async=true;el.charset="gbk";
+  el.src="https://qt.gtimg.cn/q="+codes;
+  el.onload=function(){list.forEach(s=>{const raw=window["v_"+s.code];if(raw&&typeof raw==="string"){const f=raw.split("~");setQuoteBox(s.code,parseFloat(f[3]),parseFloat(f[4]));}else{setQuoteBox(s.code,null,null);}});el.remove();};
+  el.onerror=function(){list.forEach(s=>setQuoteBox(s.code,null,null));el.remove();};
+  document.body.appendChild(el);
+}
+function inferPrefix(code){code=code.replace(/\s/g,"");return /^[69]/.test(code)?"sh":(/^[03]/.test(code)?"sz":"sh");}
+function renderStocks(){
+  const kw=($("stockKw")?.value||"").trim().toLowerCase();
+  const list=kw?STOCK_DB.filter(s=>(s.name+s.py+s.code+s.ind).toLowerCase().includes(kw)):STOCK_DB;
+  if(list.length){
+    $("stockList").innerHTML=list.map(s=>`<div class="stock-card" onclick="showStock('${s.code}')"><div class="sn">${esc(s.name)}</div><div class="sc">${s.code.toUpperCase()} · ${esc(s.ind)}</div><div class="sq" id="sq-${s.code}"><span class="muted" style="font-size:11px">加载行情…</span></div></div>`).join("");
+    loadStockQuotes(list);
+  }else{
+    const raw=kw.replace(/\s/g,"");const pre=inferPrefix(raw);const full=pre+raw;
+    $("stockList").innerHTML='<div class="empty">未在内置库中找到「'+esc(kw)+'」，可按代码直达行情：</div><div style="display:flex;gap:10px;margin-top:8px;flex-wrap:wrap"><button class="btn-ghost btn-sm" onclick="window.open(\'https://finance.sina.com.cn/realstock/company/'+full+'/nc.shtml\')">在新浪财经查 '+esc(full)+' ↗</button><button class="btn-ghost btn-sm" onclick="window.open(\'https://quote.eastmoney.com/'+full+'.html\')">在东方财富查 '+esc(full)+' ↗</button></div>';
+  }
+}
+function showStock(code){
+  const s=STOCK_DB.find(x=>x.code===code);if(!s)return;
+  $("stockDetailCard").style.display="block";
+  $("stockDetail").innerHTML=`<div class="stock-detail"><div class="sd-h">${esc(s.name)} <span class="muted" style="font-size:13px;font-weight:400">${s.code.toUpperCase()}</span> <span id="sdPrice" class="muted" style="font-size:13px;margin-left:8px">加载行情…</span></div><div class="sd-sub">所属行业：${esc(s.ind)}</div><div class="sd-sec"><h4>公司简介</h4><p style="font-size:13px;line-height:1.9;color:#4a4a58">${esc(s.intro)}</p></div><div class="sd-sec"><h4>核心看点</h4><ul>${s.hl.map(h=>`<li>${esc(h)}</li>`).join("")}</ul></div><div class="sd-sec"><h4>实时行情</h4><p class="muted" style="font-size:12.5px">点击下方按钮在券商 / 财经平台查看实时行情与详细资料：</p><div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap"><button class="btn-ghost btn-sm" onclick="window.open('https://finance.sina.com.cn/realstock/company/${s.code}/nc.shtml')">新浪财经 ↗</button><button class="btn-ghost btn-sm" onclick="window.open('https://quote.eastmoney.com/${s.code}.html')">东方财富 ↗</button></div></div></div>`;
+  $("stockDetailCard").scrollIntoView({behavior:"smooth",block:"nearest"});
+  const el=document.createElement("script");el.className="enqscript";el.async=true;el.charset="gbk";
+  el.src="https://qt.gtimg.cn/q="+code;
+  el.onload=function(){const raw=window["v_"+code];const pe=$("sdPrice");if(pe&&raw&&typeof raw==="string"){const f=raw.split("~");const price=parseFloat(f[3]);const yclose=parseFloat(f[4]);if(!isNaN(price)){const chg=price-yclose;const pct=yclose?(chg/yclose*100):0;const up=chg>=0;const col=up?"var(--red)":"var(--green)";pe.style.color=col;pe.textContent="最新 ¥"+price.toFixed(2)+"  "+(up?"+":"")+pct.toFixed(2)+"%";}else{pe.textContent="";}}else if(pe){pe.textContent="";}el.remove();};
+  el.onerror=function(){const pe=$("sdPrice");if(pe)pe.textContent="";el.remove();};
+  document.body.appendChild(el);
+}
+function renderStockInit(){try{renderStocks();}catch(e){}}
+
+/* ========== 书籍阅读（进度自动暂存） ========== */
+function renderBooks(){
+  const box=$("cultureContent");
+  const prog=LS.get("book_prog",{});
+  box.innerHTML=BOOKS.map(b=>{
+    const p=prog[b.title];const pct=p?Math.round((p.idx+1)/b.chapters.length*100):0;
+    const resume=p?`<span style="color:var(--green);font-size:12px">继续阅读（${p.idx+1}/${b.chapters.length}）</span>`:`<span class="muted" style="font-size:12px">未开始</span>`;
+    return `<div class="book-card" onclick="openBook('${esc(b.title)}')" style="cursor:pointer"><div class="book-cover" style="background:linear-gradient(135deg,${b.color},${b.color}cc)">${b.emoji}</div><div class="book-meta"><div class="bt">${esc(b.title)}</div><div class="ba">${esc(b.author)}</div><div class="bc">${b.cat}</div><div class="bi">${esc(b.intro)}</div><div class="book-prog"><i style="width:${pct}%"></i></div><div>${resume} · 共 ${b.chapters.length} 章</div></div></div>`;
+  }).join("");
+}
+function openBook(title){
+  const b=BOOKS.find(x=>x.title===title);if(!b)return;
+  const prog=LS.get("book_prog",{});const cur=prog[title]?prog[title].idx:0;
+  $("bookTitle").innerHTML='<span class="h3-ico">'+ICON.book+'</span>'+esc(b.title+" · "+b.author);
+  const chaps=b.chapters.map((c,i)=>`<div class="ch" id="bkch${i}"><h4>${i+1}. ${esc(c.h)}</h4>${c.ps.map(pp=>`<p>${esc(pp)}</p>`).join("")}</div>`).join("");
+  $("bookBody").innerHTML=`<p class="muted" style="margin-bottom:12px">${esc(b.intro)}</p>${chaps}<div class="rprog"><span>阅读进度已自动保存，下次打开从这里继续</span><button class="btn-ghost btn-sm" onclick="window.open('https://weread.qq.com/web/search/books?keyword='+encodeURIComponent('${esc(b.title)}'))">去读完整版 ↗</button></div>`;
+  $("bookMask").classList.add("show");
+  const target=$("bkch"+cur);if(target)target.scrollIntoView();
+  const cont=$("bookBody");
+  cont.onscroll=()=>{const cs=b.chapters.map((c,i)=>$("bkch"+i)).filter(Boolean);let idx=0;cs.forEach((el,i)=>{if(el.getBoundingClientRect().top<window.innerHeight*0.5)idx=i;});saveBookProg(title,idx);};
+}
+function saveBookProg(title,idx){const prog=LS.get("book_prog",{});prog[title]={idx:idx,ts:Date.now()};LS.set("book_prog",prog);}
+function closeBook(){const cont=$("bookBody");if(cont)cont.onscroll=null;$("bookMask").classList.remove("show");if(curCultureTab==="book")renderBooks();}
+
+/* ========== 英语学习 ========== */
+let _enFilter="all";
+function enKnownSet(){return LS.get("en_known",{});}
+function enFavSet(){return LS.get("en_fav",{});}
+function renderEnFilters(){const tabs=[["all","全部"],["daily","日常生活"],["trade","外贸沟通"],["review","生词本"],["known","已掌握"]];$("enFilters").innerHTML=tabs.map(t=>`<span class="chip ${_enFilter===t[0]?"on":""}" onclick="_enFilter='${t[0]}';renderEnglish()">${t[1]}</span>`).join("");}
+function getEnList(){let list=EN_WORDS;if(_enFilter==="daily")list=list.filter(w=>w.cat==="daily");else if(_enFilter==="trade")list=list.filter(w=>w.cat==="trade");else if(_enFilter==="review")list=list.filter(w=>enFavSet()[w.w]);else if(_enFilter==="known")list=list.filter(w=>enKnownSet()[w.w]);return list;}
+function speakEn(word,btn){
+  if(!("speechSynthesis" in window)){toast("当前浏览器不支持语音朗读");return;}
+  speechSynthesis.cancel();
+  const u=new SpeechSynthesisUtterance(word);u.lang="en-US";u.rate=.9;
+  const v=speechSynthesis.getVoices().find(x=>/en|english/i.test((x.lang||"")+(x.name||"")));if(v)u.voice=v;
+  if(btn)btn.classList.add("speaking");
+  u.onend=()=>{if(btn)btn.classList.remove("speaking");};
+  speechSynthesis.speak(u);
+}
+let _enStudy,_enPool,_enExPicks=[];function renderEnExamples(){if(!_enStudy||!_enPool)return;const main={ex:_enStudy.ex,ex_cn:_enStudy.ex_cn,w:_enStudy.w};const rest=_enPool.filter(e=>e.w!==main.w);const picks=[main];while(picks.length<5&&rest.length){const idx=Math.floor(Math.random()*rest.length);picks.push(rest.splice(idx,1)[0]);}_enExPicks=picks;$("enExBox").innerHTML=`<b>例句精读（${picks.length}条）</b>${picks.map((e,i)=>`<div class="en-ex-item" style="margin:6px 0;padding:8px 10px;background:var(--accent-soft);border-radius:10px"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><span style="font-size:13.5px">${esc(e.ex)}</span><button class="tts-btn btn-sm" onclick="speakEnEx(${i},this)" style="flex-shrink:0;white-space:nowrap">🔊 朗读</button></div><div class="muted" style="font-size:12px;margin-top:3px;padding-left:2px">${esc(e.ex_cn)}</div></div>`).join("")}<button class="btn-ghost btn-sm" onclick="renderEnExamples()" style="margin-top:10px;width:100%">🔄 换一批例句</button>`;}function speakEnEx(idx,btn){if(_enExPicks[idx])speakEn(_enExPicks[idx].ex,btn);}function renderEnglish(){
+  $("enDate").textContent=fmtCN(todayStr());
+  renderEnFilters();
+  const known=enKnownSet(),fav=enFavSet();
+  $("enStreak").textContent=(LS.get("english",{streak:0}).streak||0);
+  $("enTotal").textContent=LS.get("en_total",0);
+  $("enKnown").textContent=Object.keys(known).length;
+  const list=getEnList();
+  const study=list.find(w=>!known[w.w])||list[0];
+  const box=$("enWordBox");
+  if(!study){box.innerHTML='<div class="muted">该分类下暂无单词，去其它分类看看～</div>';}
+  else{
+    box.innerHTML=`<div class="ew">${esc(study.w)}</div><div class="ep">${esc(study.ph)} <span class="muted">${esc(study.pos)}</span></div><div class="ec">${esc(study.cn)}</div><div class="ex" id="enExBox"></div><div class="en-acts"><button class="tts-btn" id="enSpeakBtn" onclick="speakEn('${esc(study.w)}',this)">🔊 朗读发音</button><button class="btn-ghost btn-sm" onclick="markEn('${study.w}','known')">${known[study.w]?"✓ 已掌握":"标记掌握"}</button><button class="btn-ghost btn-sm" onclick="markEn('${study.w}','fav')">${fav[study.w]?"★ 已在生词本":"+ 生词本"}</button></div>`;
+  }
+  $("enList").innerHTML=list.length?list.map(w=>{
+    const kn=known[w.w],fv=fav[w.w];
+    return `<div class="en-item"><div class="ei-w">${esc(w.w)} <span class="muted" style="font-size:11px;font-weight:400">${esc(w.ph)}</span></div><div class="ei-c">${esc(w.cn)} · <span class="muted">${w.cat==="daily"?"日常":"外贸"}</span></div><div class="ei-acts"><button class="tts-btn btn-sm" onclick="speakEn('${esc(w.w)}',this)">🔊</button><button class="en-mini ${kn?"":"off"}" onclick="markEn('${w.w}','known')">${kn?"已掌握":"掌握"}</button><button class="en-mini ${fv?"":"off"}" onclick="markEn('${w.w}','fav')">${fv?"★生词":"生词"}</button></div></div>`;
+  }).join(""):'<div class="empty">该分类下暂无单词</div>';
+  const btn=$("enCheckBtn");const c=LS.get("english",{lastDate:""});const done=c.lastDate===todayStr();btn.textContent=done?"今日已打卡":"今日打卡";btn.disabled=done;btn.style.opacity=done?".5":"1";
+if(study){_enStudy=study;_enPool=list.filter(w=>w.cat===study.cat).map(w=>({ex:w.ex,ex_cn:w.ex_cn,w:w.w}));renderEnExamples();}
+}
+function markEn(word,kind){
+  if(kind==="known"){const k=enKnownSet();if(k[word])delete k[word];else{k[word]=todayStr();const t=LS.get("en_total",0);LS.set("en_total",t+1);}LS.set("en_known",k);}
+  else{const f=enFavSet();if(f[word])delete f[word];else f[word]=todayStr();LS.set("en_fav",f);}
+  renderEnglish();
+}
+function resetEnWord(){const list=getEnList().filter(w=>!enKnownSet()[w.w]);const w=list[Math.floor(Math.random()*list.length)]||EN_WORDS[0];toast("换一个："+w.w);renderEnglish();}
+function checkinEnglish(){const c=LS.get("english",{lastDate:"",streak:0});if(c.lastDate===todayStr())return;const gap=c.lastDate?(new Date(todayStr())-new Date(c.lastDate))/86400000:99;c.streak=(gap===1)?(c.streak||0)+1:1;c.lastDate=todayStr();LS.set("english",c);toast("英语学习打卡成功 🌟");renderEnglish();}
+
+/* ========== 语义化图标装饰（清新卡通风：渐变圆角图标盒 + 白色描边 SVG） ========== */
+const ICON={
+ plan:'<svg viewBox="0 0 24 24"><path d="M9 11l3 3 8-8"/><path d="M20 12v7a2 2 0 01-2 2H6a2 2 0 01-2-2V5a2 2 0 012-2h9"/></svg>',
+ news:'<svg viewBox="0 0 24 24"><path d="M4 4h16a1 1 0 011 1v14a1 1 0 01-1 1H4z"/><path d="M19 8h2a1 1 0 011 1v11"/><path d="M8 7h6M8 11h8M8 15h5"/></svg>',
+ idea:'<svg viewBox="0 0 24 24"><path d="M9 18h6M10 21h4M12 3a6 6 0 00-4 10.5c.8.7 1 1.5 1 2.5h6c0-1 .2-1.8 1-2.5A6 6 0 0012 3z"/></svg>',
+ invest:'<svg viewBox="0 0 24 24"><path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/></svg>',
+ read:'<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>',
+ culture:'<svg viewBox="0 0 24 24"><path d="M12 3L2 8l10 5 10-5z"/><path d="M6 10v6c0 1.5 2.7 3 6 3s6-1.5 6-3v-6"/></svg>',
+ english:'<svg viewBox="0 0 24 24"><path d="M3 5h9v14H3zM12 5h9v14h-9z"/></svg>',
+ ledger:'<svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M8 4v5"/></svg>',
+ pro:'<svg viewBox="0 0 24 24"><path d="M6 3h12a1 1 0 011 1v17l-7-4-7 4V4a1 1 0 011-1z"/></svg>',
+ calendar:'<svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18M8 2v4M16 2v4"/></svg>',
+ check:'<svg viewBox="0 0 24 24"><path d="M9 11l3 3 8-8"/><path d="M20 12v7a2 2 0 01-2 2H6a2 2 0 01-2-2V5a2 2 0 012-2h9"/></svg>',
+ brief:'<svg viewBox="0 0 24 24"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7V5a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>',
+ loop:'<svg viewBox="0 0 24 24"><path d="M4 4v6h6"/><path d="M20 20v-6h-6"/><path d="M4 10a8 8 0 0114-3M20 14a8 8 0 01-14 3"/></svg>',
+ pen:'<svg viewBox="0 0 24 24"><path d="M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4z"/></svg>',
+ history:'<svg viewBox="0 0 24 24"><path d="M3 3v5h5"/><path d="M3.05 13A9 9 0 106 5.3L3 8"/><path d="M12 7v5l4 2"/></svg>',
+ news:'<svg viewBox="0 0 24 24"><path d="M4 4h13a1 1 0 011 1v15a1 1 0 01-1 1H4z"/><path d="M18 8h2a1 1 0 011 1v11"/><path d="M7 8h7M7 12h7M7 16h5"/></svg>',
+ star:'<svg viewBox="0 0 24 24"><path d="M12 2l3 6.5 7 .6-5.3 4.6 1.6 7-6.3-3.8L5.7 20.7l1.6-7L2 9.1l7-.6z"/></svg>',
+ wallet:'<svg viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="13" rx="2"/><path d="M16 12h.01"/><path d="M2 10h20"/></svg>',
+ pie:'<svg viewBox="0 0 24 24"><path d="M21 12A9 9 0 1112 3v9z"/><path d="M12 3a9 9 0 019 9h-9z"/></svg>',
+ list:'<svg viewBox="0 0 24 24"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>',
+ plus:'<svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>',
+ eye:'<svg viewBox="0 0 24 24"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>',
+ flame:'<svg viewBox="0 0 24 24"><path d="M12 2c1 3-1 5-1 7a2 2 0 004 0c1 2 2 4 2 6a5 5 0 01-10 0c0-4 3-6 5-13z"/></svg>',
+ sun:'<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M19.1 4.9l-1.4 1.4M6.3 17.7l-1.4 1.4"/></svg>',
+ layers:'<svg viewBox="0 0 24 24"><path d="M12 3l9 5-9 5-9-5z"/><path d="M3 13l9 5 9-5"/></svg>',
+ coin:'<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v10M9 10h6M9 14h6"/></svg>',
+ book:'<svg viewBox="0 0 24 24"><path d="M4 5a2 2 0 012-2h12v16H6a2 2 0 00-2 2z"/><path d="M4 19a2 2 0 012-2h12"/></svg>'
+};
+const PAGE_ICON={plan:ICON.plan,news:ICON.news,idea:ICON.idea,invest:ICON.invest,read:ICON.read,culture:ICON.culture,english:ICON.english,ledger:ICON.ledger,pro:ICON.pro};
+const ICON_BY_NAME={"每日计划":ICON.plan,"新闻资讯":ICON.news,"灵感记录":ICON.idea,"投资理财":ICON.invest,"专注计时":ICON.read,"文化学习":ICON.culture,"财务记账":ICON.ledger,"书签":ICON.pro};
+const H3_ICON=[["月历",ICON.calendar],["待办",ICON.check],["工作任务",ICON.brief],["复盘",ICON.loop],["想法",ICON.pen],["历史灵感",ICON.history],["热点",ICON.news],["新闻",ICON.news],["习惯",ICON.star],["记一笔",ICON.wallet],["占比",ICON.pie],["流水",ICON.list],["添加",ICON.plus],["新书签",ICON.plus],["今日总览",ICON.eye]];
+const STAT_ICON=[["今日状态",ICON.sun],["连续打卡",ICON.flame],["累计",ICON.layers],["本月支出",ICON.wallet],["今日支出",ICON.coin],["本年支出",ICON.calendar],["消费笔数",ICON.list],["已掌握",ICON.check]];
+function matchIcon(map,txt){for(const e of map){if(txt.indexOf(e[0])>=0)return e[1];}return"";}
+function decorateIcons(){
+ document.querySelectorAll(".page-head").forEach(ph=>{
+  if(ph.querySelector(":scope > .page-ico"))return;
+  const left=ph.children[0];if(!left)return;
+  const sec=ph.closest(".page");if(!sec||!sec.id)return;
+  const svg=PAGE_ICON[sec.id.replace("page-","")];if(!svg)return;
+  left.style.display="flex";left.style.alignItems="center";left.style.gap="14px";
+  const s=document.createElement("span");s.className="page-ico";s.innerHTML=svg;
+  left.insertBefore(s,left.firstChild);
+ });
+ document.querySelectorAll(".card h3, .modal h3").forEach(h=>{
+  if(h.querySelector(".h3-ico"))return;
+  const svg=matchIcon(H3_ICON,h.textContent);if(!svg)return;
+  const s=document.createElement("span");s.className="h3-ico";s.innerHTML=svg;
+  h.insertBefore(s,h.firstChild);
+ });
+ document.querySelectorAll(".stat-mini").forEach(m=>{
+  if(m.querySelector(".mini-ico"))return;
+  const k=m.querySelector(".k");if(!k)return;
+  const svg=matchIcon(STAT_ICON,k.textContent);if(!svg)return;
+  const s=document.createElement("span");s.className="mini-ico";s.innerHTML=svg;
+  k.insertBefore(s,k.firstChild);
+ });
+}
+buildNav();renderAll();decorateIcons();
+applyTheme(LS.get("theme","default"));
+if(LS.get("nav_collapsed",false)){document.getElementById("sidebar").classList.add("collapsed");}
+go("plan");
+let _day=todayStr();
+setInterval(()=>{if(todayStr()!==_day){_day=todayStr();renderAll();}},60*1000);
+if("Notification" in window&&Notification.permission==="default"){setTimeout(()=>Notification.requestPermission(),3000);}
+ideaReminderCheck();
+if(typeof speechSynthesis!=="undefined"){speechSynthesis.onvoiceschanged=()=>{};}
+if("serviceWorker" in navigator){window.addEventListener("load",function(){navigator.serviceWorker.register("sw.js").then(()=>{}).catch(()=>{});});}
+
+/* PWA 全环境安装引导 */
+(function(){
+  var deferredPrompt=null;
+  var bar=document.getElementById("pwa-install-bar");
+  var btn=document.getElementById("pwa-install-btn");
+  if(!bar||!btn) return;
+  // 已在 APP 模式中运行则不提示
+  var standalone=window.matchMedia("(display-mode: standalone)").matches||window.navigator.standalone===true;
+  if(standalone) return;
+
+  var ua=navigator.userAgent.toLowerCase();
+  var isWeixin=/micromessenger/.test(ua);
+  var isQQ=/\bqq\b|qqbrowser/.test(ua)&&!isWeixin;
+  var isIOS=/iphone|ipad|ipod/.test(ua)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);
+  var isAndroid=/android/.test(ua);
+
+  function guideHTML(){
+    var steps;
+    if(isWeixin||isQQ){
+      steps='<p style="color:#f87171;font-weight:700">⚠️ 当前在'+(isWeixin?'微信':'QQ')+'内置浏览器中，无法直接安装。</p>'
+        +'<ol style="padding-left:20px;line-height:2">'
+        +'<li>点击右上角 <b>「···」</b> 菜单</li>'
+        +'<li>选择 <b>「在浏览器打开」</b>（推荐用 Chrome）</li>'
+        +'<li>在浏览器中再按提示安装即可</li></ol>';
+    }else if(isIOS){
+      steps='<p>请使用 <b>Safari 浏览器</b> 打开本页，然后：</p>'
+        +'<ol style="padding-left:20px;line-height:2">'
+        +'<li>点击底部 <b>分享按钮</b>（□↑ 方框带箭头）</li>'
+        +'<li>向下滑动，选择 <b>「添加到主屏幕」</b></li>'
+        +'<li>点右上角「添加」，桌面即出现 <b>北斗星</b> 图标</li></ol>'
+        +'<p style="color:#8b8ba5;font-size:12px">注：Chrome/微信等 iOS 上的其他浏览器不支持添加，必须用 Safari。</p>';
+    }else if(isAndroid){
+      steps='<ol style="padding-left:20px;line-height:2">'
+        +'<li>推荐用 <b>Chrome 浏览器</b> 打开本页</li>'
+        +'<li>点击右上角 <b>「⋮」</b> 菜单</li>'
+        +'<li>选择 <b>「添加到主屏幕」</b> 或 <b>「安装应用」</b></li>'
+        +'<li>确认后，桌面即出现 <b>北斗星</b> 图标</li></ol>'
+        +'<p style="color:#8b8ba5;font-size:12px">华为/小米/OPPO 等自带浏览器：菜单里找「添加到桌面」；若找不到，请改用 Chrome 打开。</p>';
+    }else{
+      steps='<ol style="padding-left:20px;line-height:2">'
+        +'<li>使用 Chrome / Edge 浏览器打开本页</li>'
+        +'<li>点击地址栏右侧的 <b>安装图标</b>（⊕ 或电脑屏幕小图标）</li>'
+        +'<li>或浏览器菜单 → <b>「安装 北斗星工作台」</b></li></ol>';
+    }
+    return '<div style="font-size:14px;color:var(--text)">'+steps+'</div>';
+  }
+
+  function showGuide(){
+    var mask=document.createElement("div");
+    mask.style.cssText="position:fixed;inset:0;background:rgba(20,18,35,.5);z-index:10000;display:flex;align-items:center;justify-content:center;padding:20px";
+    mask.innerHTML='<div style="background:#fff;border-radius:18px;max-width:420px;width:100%;padding:22px 20px;max-height:80vh;overflow-y:auto">'
+      +'<div style="display:flex;align-items:center;gap:10px;margin-bottom:12px"><img src="icon-192.png" style="width:40px;height:40px;border-radius:10px" alt=""><b style="font-size:16px">安装「北斗星工作台」到桌面</b></div>'
+      +guideHTML()
+      +'<button style="width:100%;margin-top:14px;background:var(--accent);color:#fff;border:none;padding:11px;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer" onclick="this.closest(\'div\').parentNode.remove()">知道了</button></div>';
+    mask.addEventListener("click",function(e){if(e.target===mask)mask.remove();});
+    document.body.appendChild(mask);
+  }
+  window.showPwaGuide=showGuide;
+
+  // Chrome 等支持原生安装提示的浏览器
+  window.addEventListener("beforeinstallprompt",function(e){
+    e.preventDefault();
+    deferredPrompt=e;
+    bar.style.display="flex";
+    btn.textContent="立即安装";
+    btn.onclick=function(){
+      bar.style.display="none";
+      deferredPrompt.prompt();
+      deferredPrompt.userChoice.then(function(c){
+        deferredPrompt=null;
+        if(c.outcome==="accepted") toast("已添加到主屏幕 ✅");
+      });
+    };
+  });
+
+  // 不支持原生提示的环境：延迟 2 秒显示引导横幅（每天最多提醒一次）
+  setTimeout(function(){
+    if(deferredPrompt) return; // 原生提示已接管
+    var k="ws_pwa_guide_day";
+    try{ if(localStorage.getItem(k)===todayStr()) return; }catch(err){}
+    bar.style.display="flex";
+    btn.textContent="查看安装教程";
+    btn.onclick=function(){
+      bar.style.display="none";
+      try{ localStorage.setItem(k,todayStr()); }catch(err){}
+      showGuide();
+    };
+    var later=bar.querySelector("button:last-child");
+    if(later) later.onclick=function(){
+      bar.style.display="none";
+      try{ localStorage.setItem(k,todayStr()); }catch(err){}
+    };
+  },2000);
+
+  window.addEventListener("appinstalled",function(){
+    bar.style.display="none";
+    toast("北斗星工作台已安装到主屏幕 🎉");
+  });
+})();
+
+</script>
+</body>
+</html>
