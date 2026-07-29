@@ -60,6 +60,8 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
   .topbar .menu-btn{width:38px;height:38px;border-radius:10px;background:var(--accent-soft);color:var(--accent);font-size:18px;display:flex;align-items:center;justify-content:center;flex-shrink:0;cursor:pointer}
   .topbar .menu-btn svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
   .topbar-logo{display:flex;align-items:center;gap:9px;font-size:15px;font-weight:800;line-height:1.25}
+  .topbar.compact{justify-content:flex-start;padding:0 10px}
+  .topbar.compact .topbar-logo{display:none}
   .topbar-logo .icon{width:28px;height:28px;border-radius:9px;background:linear-gradient(135deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center;flex-shrink:0}
   .nav-toggle{display:none}
   .sidebar{position:fixed;top:0;left:0;bottom:0;width:min(82vw,260px);z-index:95;transform:translateX(-100%);transition:transform .28s ease;box-shadow:8px 0 28px rgba(20,18,35,.18)}
@@ -221,6 +223,11 @@ input:focus,textarea:focus,select:focus{border-color:var(--accent);box-shadow:0 
 .toast{position:fixed;top:24px;left:50%;transform:translateX(-50%);background:linear-gradient(135deg,#2a2a35,#3d3a52);color:#fff;padding:12px 24px;border-radius:12px;font-size:13px;z-index:200;display:none;box-shadow:0 12px 32px rgba(0,0,0,.2)}
 .toast.show{display:block;animation:fade .25s}
 /* ===== 月历视图 ===== */
+.cal-collapse{cursor:pointer;user-select:none}
+.cal-collapse .cal-arrow{display:inline-block;font-size:12px;transition:transform .25s;margin-left:6px;color:var(--sub)}
+.cal-collapse .cal-arrow.collapsed{transform:rotate(-90deg)}
+.cal-body{overflow:hidden;transition:max-height .35s ease,opacity .25s ease,max-height .35s ease}
+.cal-body.collapsed{max-height:0!important;opacity:0;margin-top:0;padding-top:0;padding-bottom:0}
 .cal{background:linear-gradient(135deg,#fff,var(--purple-light));border-radius:14px;padding:14px 16px}
 .cal-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
 .cal-head .m{font-weight:800;font-size:15px;color:var(--text)}
@@ -330,7 +337,7 @@ input:focus,textarea:focus,select:focus{border-color:var(--accent);box-shadow:0 
 <section class="page" id="page-plan">
 <div class="page-head"><div><h2>每日计划</h2><div class="sub">预设任务每天 0 点自动重置生成</div></div><div class="date-chip" id="planDate"></div></div>
 <div class="card"><div class="progress-wrap"><div class="progress-bar"><i id="planBarFill"></i></div><b id="planProgressTxt" style="white-space:nowrap;font-size:14px">已完成 0/0 项</b></div></div>
-<div class="card"><h3>月历视图 <span class="muted">点击日期查看当日待办 / 工作任务 / 复盘</span></h3><div class="cal" id="planCal"></div><div id="planDayDetail"></div></div>
+<div class="card"><h3 class="cal-collapse" onclick="toggleCal('plan')"><span>月历视图</span> <span class="muted">点击日期查看当日待办 / 工作任务 / 复盘</span><span class="cal-arrow" id="planCalArrow">▾</span></h3><div class="cal-body" id="planCalBody"><div class="cal" id="planCal"></div><div id="planDayDetail"></div></div></div>
 <div class="card"><h3>今日待办</h3><div id="todoList"></div>
 <div class="add-row"><input type="text" id="newTaskInput" placeholder="输入自定义任务，回车或点击添加..." maxlength="40"><button class="btn" onclick="addTask()">添加任务</button></div></div>
 <div class="card"><h3>工作任务 <span class="muted" id="workStat"></span></h3><div id="workList"></div>
@@ -415,7 +422,7 @@ input:focus,textarea:focus,select:focus{border-color:var(--accent);box-shadow:0 
 <!-- 7 财务记账 -->
 <section class="page" id="page-ledger">
 <div class="page-head"><div><h2>财务记账</h2><div class="sub">支持手动与语音记账 · 数据本地留存</div></div><div class="date-chip" id="ledgerDate"></div></div>
-<div class="card"><h3>月历视图 <span class="muted">点击日期查看当日支出明细</span></h3><div class="cal" id="ledgerCal"></div><div id="ledgerDayDetail"></div></div>
+<div class="card"><h3 class="cal-collapse" onclick="toggleCal('ledger')"><span>月历视图</span> <span class="muted">点击日期查看当日支出明细</span><span class="cal-arrow" id="ledgerCalArrow">▾</span></h3><div class="cal-body" id="ledgerCalBody"><div class="cal" id="ledgerCal"></div><div id="ledgerDayDetail"></div></div></div>
 <div class="ledger-dash">
 <div class="stat-mini"><div class="k">本月支出</div><div class="v">¥<span id="dashMonth">0</span></div></div>
 <div class="stat-mini"><div class="k">今日支出</div><div class="v">¥<span id="dashToday">0</span></div></div>
@@ -537,7 +544,7 @@ const PAGES=[
 {id:"pro",name:"书签",icon:'<svg viewBox="0 0 24 24"><path d="M6 3h12a1 1 0 011 1v17l-7-4-7 4V4a1 1 0 011-1z"/></svg>'}
 ];
 function buildNav(){$("nav").innerHTML=PAGES.map(p=>`<div class="nav-item" data-p="${p.id}" title="${p.name}" onclick="go('${p.id}')">${p.icon}<span>${p.name}</span></div>`).join("");}
-function go(id){closeDrawer();document.querySelectorAll(".page").forEach(e=>e.classList.remove("active"));document.querySelectorAll(".nav-item").forEach(e=>e.classList.toggle("active",e.dataset.p===id));$("page-"+id).classList.add("active");$("main").scrollTop=0;const viewed=LS.get("viewed",{});if(viewed.date!==todayStr()){viewed.date=todayStr();viewed.pages=[];}if(!viewed.pages.includes(id))viewed.pages.push(id);LS.set("viewed",viewed);if(id==="plan")renderPlanCal();if(id==="ledger")renderLedgerCal();if(id==="idea")renderIdeaCal();if(id==="culture")renderCulture();if(id==="pro")renderBookmarks();if(id==="news")renderNews();if(id==="english")renderEnglish();}
+function go(id){closeDrawer();document.querySelectorAll(".page").forEach(e=>e.classList.remove("active"));document.querySelectorAll(".nav-item").forEach(e=>e.classList.toggle("active",e.dataset.p===id));$("page-"+id).classList.add("active");$("main").scrollTop=0;const tb=$("topbar");if(tb){if(id&&tb.classList){tb.classList.toggle("compact",true);}else if(tb&&tb.classList){tb.classList.remove("compact");}}const viewed=LS.get("viewed",{});if(viewed.date!==todayStr()){viewed.date=todayStr();viewed.pages=[];}if(!viewed.pages.includes(id))viewed.pages.push(id);LS.set("viewed",viewed);if(id==="plan")renderPlanCal();if(id==="ledger")renderLedgerCal();if(id==="idea")renderIdeaCal();if(id==="culture")renderCulture();if(id==="pro")renderBookmarks();if(id==="news")renderNews();if(id==="english")renderEnglish();}
 /* ====== 配色方案 ====== */
 const THEMES=[
  {id:"default",name:"香芋紫",c:"#7c5cfc"},
@@ -587,6 +594,10 @@ function fmtDate(dt){return dt.getFullYear()+"-"+String(dt.getMonth()+1).padStar
 function buildCal(key){const c=_cals[key];const [yy,mm]=c.ym.split("-").map(Number);const mName=yy+"年"+(mm+1)+"月";const mat=monthMatrix(yy,mm);const today=todayStr();let html=`<div class="cal-head"><div class="cal-nav"><button onclick="calMove('${key}',-1)">‹</button></div><div class="m">${mName}</div><div class="cal-nav"><button onclick="calMove('${key}',1)">›</button></div></div><div class="cal-grid">`;html+=['日','一','二','三','四','五','六'].map(w=>`<div class="cal-wd">${w}</div>`).join("");mat.forEach(row=>row.forEach(dt=>{const ds=fmtDate(dt);const dim=dt.getMonth()!==mm;let cls="cal-d"+(dim?" dim":"")+(ds===today?" today":"")+(c.sel===ds?" sel":"");const dot=c.dotFn&&c.dotFn(ds)&&!dim?'<span class="dot"></span>':'';html+=`<div class="${cls}" onclick="calSelect('${key}','${ds}')">${dt.getDate()}${dot}</div>`;}));html+='</div>';$(c.id).innerHTML=html;}
 function calMove(key,dir){const c=_cals[key];let [yy,mm]=c.ym.split("-").map(Number);mm+=dir;if(mm<0){mm=11;yy--;}if(mm>11){mm=0;yy++;}c.ym=yy+"-"+mm;buildCal(key);}
 function calSelect(key,ds){const c=_cals[key];c.sel=ds;buildCal(key);c.onSelect(ds);}
+/* 日历折叠/展开 */
+const _calCollapsed={};
+function toggleCal(key){_calCollapsed[key]=!_calCollapsed[key];const body=$(key+"CalBody");const arrow=$(key+"CalArrow");if(body){body.classList.toggle("collapsed",_calCollapsed[key]);}if(arrow){arrow.classList.toggle("collapsed",_calCollapsed[key]);}LS.set("cal_collapsed",_calCollapsed);}
+function restoreCalState(){const s=LS.get("cal_collapsed",{});Object.keys(s).forEach(k=>{if(s[k]){const body=$(k+"CalBody");const arrow=$(k+"CalArrow");if(body)body.classList.add("collapsed");if(arrow)arrow.classList.add("collapsed");_calCollapsed[k]=true;}});}
 function calOpen(key,id,onSelect,dotFn,sel){_cals[key]={key,id,onSelect,dotFn,ym:(new Date().getFullYear()+"-"+(new Date().getMonth())),sel:sel||todayStr()};buildCal(key);}
 /* 每日计划 · 月历 */
 function planHasData(d){const h=LS.get("planHistory",{});const ph=h[d];const hasTodo=ph&&ph.tasks&&ph.tasks.length>0;const hasWork=LS.get("workTasks",[]).some(t=>t.created===d||(t.ddl&&t.ddl===d));const hasRev=LS.get("reviews",[]).some(r=>r.date===d);return hasTodo||hasWork||hasRev;}
@@ -1002,8 +1013,8 @@ function toggleLearned(key,unique,btn){
   updateCultureTotal();
 }
 function toggleCF(id){const el=document.getElementById(id);if(el)el.classList.toggle("show");}
-function speakText(i){if(!("speechSynthesis" in window)){toast("当前浏览器不支持语音朗读");return;}speechSynthesis.cancel();const list=curPoemList&&curPoemList.length?curPoemList:getShuffled(POEMS).slice(0,20);const p=list[i];if(!p)return;const u=new SpeechSynthesisUtterance((p.body||p.q).replace(/\n/g,"。"));u.lang="zh-CN";u.rate=.9;u.pitch=1;const v=pickZhVoice();if(v)u.voice=v;u.onstart=()=>{const b=$("tts"+i);if(b){b.classList.add("speaking");b.textContent="🔈 朗读中";}};u.onend=()=>{const b=$("tts"+i);if(b){b.classList.remove("speaking");b.textContent="🔊 朗读";}};speechSynthesis.speak(u);toast("正在朗读:"+p.title);}
-function pickZhVoice(){if(!("speechSynthesis" in window))return null;const vs=speechSynthesis.getVoices()||[];return vs.find(v=>/zh|chinese|中文|普通话/i.test((v.lang||"")+(v.name||"")))||null;}
+function speakText(i){if(typeof speechSynthesis==="undefined"||!speechSynthesis){toast("当前环境不支持语音合成");return;}speechSynthesis.cancel();const list=curPoemList&&curPoemList.length?curPoemList:getShuffled(POEMS).slice(0,20);const p=list[i];if(!p)return;const u=new SpeechSynthesisUtterance((p.body||p.q).replace(/\n/g,"。"));u.lang="zh-CN";u.rate=.9;u.pitch=1;if(_ttsVoices.length>0){const v=_ttsVoices.find(v=>/zh|chinese|中文|普通话/i.test((v.lang||"")+(v.name||"")));if(v)u.voice=v;}u.onstart=()=>{const b=$("tts"+i);if(b){b.classList.add("speaking");b.textContent="🔈 朗读中";}};u.onend=()=>{const b=$("tts"+i);if(b){b.classList.remove("speaking");b.textContent="🔊 朗读";}};u.onerror=function(){const b=$("tts"+i);if(b){b.classList.remove("speaking");b.textContent="🔊 朗读";}};speechSynthesis.speak(u);toast("正在朗读:"+p.title);}
+function pickZhVoice(){if(_ttsVoices.length===0)return null;return _ttsVoices.find(v=>/zh|chinese|中文|普通话/i.test((v.lang||"")+(v.name||"")))||null;}
 function renderCulture(){$("cultureDate").textContent=fmtCN(todayStr())+" · 每日精选";const c=LS.get("culture",{lastDate:"",streak:0,totalDays:0});const doneToday=c.lastDate===todayStr();$("cultureTodayState").textContent=doneToday?"已打卡":"未打卡";$("cultureTodayState").style.color=doneToday?"var(--green)":"var(--orange)";let streak=c.streak||0;if(c.lastDate&&c.lastDate!==todayStr()){const gap=(new Date(todayStr())-new Date(c.lastDate))/86400000;if(gap>1){streak=0;c.streak=0;LS.set("culture",c);}}$("cultureStreak").textContent=streak;updateCultureTotal();const btn=$("cultureCheckBtn");btn.textContent=doneToday?"今日已打卡":"今日打卡";btn.disabled=doneToday;btn.style.opacity=doneToday?".5":"1";renderCulTabs();try{renderCultureTab();}catch(e){console.error("文化学习内容加载失败:",e);$("cultureContent").innerHTML='<div class="empty">模块内容加载出错，请刷新重试：'+(e&&e.message?e.message:"未知错误")+'</div>';}}
 function checkinCulture(){const c=LS.get("culture",{lastDate:"",streak:0,totalDays:0});if(c.lastDate===todayStr())return;const gap=c.lastDate?(new Date(todayStr())-new Date(c.lastDate))/86400000:99;c.streak=(gap===1)?(c.streak||0)+1:1;c.lastDate=todayStr();c.totalDays=(c.totalDays||0)+1;LS.set("culture",c);toast("文化学习打卡成功 🌟");renderCulture();}
 const DEFAULT_CATS={expense:["餐饮","交通","购物","娱乐","住房","医疗","教育","通讯","人情","旅行","宠物","其他"],income:["工资","理财","兼职","红包","其他"]};
@@ -1103,7 +1114,20 @@ function renderBookmarks(){
   let all=[...BOOKMARK_DB,...mine];
   if(_bmCat!=="all")all=all.filter(b=>b.cat===_bmCat);
   if(q)all=all.filter(b=>(b.name+" "+(b.tags||"")+" "+b.url).toLowerCase().includes(q));
-  $("bmList").innerHTML=all.length?all.map(b=>`<a class="bm-card" href="${b.url}" target="_blank" rel="noopener noreferrer" title="${esc(b.name)}"><div class="bm-ico">${esc(b.name.charAt(0))}</div><div class="bm-info"><b>${esc(b.name)}</b><span>${esc(b.url.replace(/^https?:\/\//,"").replace(/\/$/,""))}</span></div><span class="bm-tag">${BM_CAT_NAME[b.cat]||""}</span>${b.mine?`<span class="bm-del" title="删除" onclick="event.preventDefault();event.stopPropagation();delBookmark(${b.id})">✕</span>`:""}</a>`).join(""):`<div class="muted" style="grid-column:1/-1;text-align:center;padding:36px 0">未找到匹配的书签，可在上方手动添加</div>`;
+  /* 检测是否在PWA独立模式 */
+  const isStandalone=window.matchMedia("(display-mode:standalone)").matches||window.navigator.standalone===true;
+  $("bmList").innerHTML=all.length?all.map(b=>{
+    const href=b.url;
+    const attrs=isStandalone?`href="${href}" data-bm-href="${esc(href)}" onclick="handleBmClick(event,this)"`: `href="${href}" target="_blank" rel="noopener noreferrer"`;
+    return `<a class="bm-card" ${attrs} title="${esc(b.name)}"><div class="bm-ico">${esc(b.name.charAt(0))}</div><div class="bm-info"><b>${esc(b.name)}</b><span>${esc(b.url.replace(/^https?:\/\//,"").replace(/\/$/,""))}</span></div><span class="bm-tag">${BM_CAT_NAME[b.cat]||""}</span>${b.mine?`<span class="bm-del" title="删除" onclick="event.preventDefault();event.stopPropagation();delBookmark(${b.id})">✕</span>`:""}</a>`;
+  }).join(""):`<div class="muted" style="grid-column:1/-1;text-align:center;padding:36px 0">未找到匹配的书签，可在上方手动添加</div>`;
+}
+/* PWA模式下点击书签：同窗口打开（可用返回键回来）+ 提示 */
+function handleBmClick(e,el){
+  e.preventDefault();
+  const url=el.dataset.bmHref||el.href;
+  toast("正在打开外部链接，浏览完毕请按返回键回到工作台");
+  setTimeout(function(){window.location.href=url;},300);
 }
 
 function overviewStatus(){
@@ -1408,12 +1432,23 @@ function enFavSet(){return LS.get("en_fav",{});}
 function renderEnFilters(){const tabs=[["all","全部"],["daily","日常生活"],["trade","外贸沟通"],["review","生词本"],["known","已掌握"]];$("enFilters").innerHTML=tabs.map(t=>`<span class="chip ${_enFilter===t[0]?"on":""}" onclick="_enFilter='${t[0]}';renderEnglish()">${t[1]}</span>`).join("");}
 function getEnList(){let list=EN_WORDS;if(_enFilter==="daily")list=list.filter(w=>w.cat==="daily");else if(_enFilter==="trade")list=list.filter(w=>w.cat==="trade");else if(_enFilter==="review")list=list.filter(w=>enFavSet()[w.w]);else if(_enFilter==="known")list=list.filter(w=>enKnownSet()[w.w]);return list;}
 function speakEn(word,btn){
-  if(!("speechSynthesis" in window)){toast("当前浏览器不支持语音朗读");return;}
+  if(typeof speechSynthesis==="undefined"||!speechSynthesis){toast("当前环境不支持语音合成，请尝试使用系统浏览器（如Chrome/Edge）打开");return;}
   speechSynthesis.cancel();
-  const u=new SpeechSynthesisUtterance(word);u.lang="en-US";u.rate=.9;
-  const v=speechSynthesis.getVoices().find(x=>/en|english/i.test((x.lang||"")+(x.name||"")));if(v)u.voice=v;
+  const u=new SpeechSynthesisUtterance(word);u.lang="en-US";u.rate=.9;u.pitch=1;u.volume=1;
+  /* 优先从缓存选英文语音 */
+  if(_ttsVoices.length>0){
+    const v=_ttsVoices.find(x=>/en|english/i.test((x.lang||"")+(x.name||"")));
+    if(v)u.voice=v;
+    /* 若无英文voice但有其他voice，仍尝试播放（浏览器会用默认voice） */
+  }
+  /* 某些WebView需要先cancel再稍后speak才能正常工作 */
   if(btn)btn.classList.add("speaking");
   u.onend=()=>{if(btn)btn.classList.remove("speaking");};
+  u.onerror=function(e){
+    if(btn)btn.classList.remove("speaking");
+    console.warn("TTS error:",e);
+    toast("朗读失败，该浏览器可能不支持英语语音");
+  };
   speechSynthesis.speak(u);
 }
 let _enStudy,_enPool,_enExPicks=[];function renderEnExamples(){if(!_enStudy||!_enPool)return;const main={ex:_enStudy.ex,ex_cn:_enStudy.ex_cn,w:_enStudy.w};const rest=_enPool.filter(e=>e.w!==main.w);const picks=[main];while(picks.length<5&&rest.length){const idx=Math.floor(Math.random()*rest.length);picks.push(rest.splice(idx,1)[0]);}_enExPicks=picks;$("enExBox").innerHTML=`<b>例句精读（${picks.length}条）</b>${picks.map((e,i)=>`<div class="en-ex-item" style="margin:6px 0;padding:8px 10px;background:var(--accent-soft);border-radius:10px"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><span style="font-size:13.5px">${esc(e.ex)}</span><button class="tts-btn btn-sm" onclick="speakEnEx(${i},this)" style="flex-shrink:0;white-space:nowrap">🔊 朗读</button></div><div class="muted" style="font-size:12px;margin-top:3px;padding-left:2px">${esc(e.ex_cn)}</div></div>`).join("")}<button class="btn-ghost btn-sm" onclick="renderEnExamples()" style="margin-top:10px;width:100%">🔄 换一批例句</button>`;}function speakEnEx(idx,btn){if(_enExPicks[idx])speakEn(_enExPicks[idx].ex,btn);}function renderEnglish(){
@@ -1504,7 +1539,7 @@ function decorateIcons(){
   k.insertBefore(s,k.firstChild);
  });
 }
-buildNav();renderAll();decorateIcons();
+buildNav();renderAll();decorateIcons();restoreCalState();
 applyTheme(LS.get("theme","default"));
 if(LS.get("nav_collapsed",false)){document.getElementById("sidebar").classList.add("collapsed");}
 go("plan");
@@ -1512,7 +1547,19 @@ let _day=todayStr();
 setInterval(()=>{if(todayStr()!==_day){_day=todayStr();renderAll();}},60*1000);
 if("Notification" in window&&Notification.permission==="default"){setTimeout(()=>Notification.requestPermission(),3000);}
 ideaReminderCheck();
-if(typeof speechSynthesis!=="undefined"){speechSynthesis.onvoiceschanged=()=>{};}
+/* 语音合成：预加载并缓存可用语音 */
+let _ttsVoices=[];
+let _ttsReady=false;
+function initTTS(){
+  if(typeof speechSynthesis==="undefined")return;
+  function loadVoices(){_ttsVoices=speechSynthesis.getVoices()||[];_ttsReady=_ttsVoices.length>0;}
+  loadVoices();
+  speechSynthesis.onvoiceschanged=function(){loadVoices();};
+  /* 部分Android WebView需要延迟再次尝试 */
+  setTimeout(loadVoices,500);
+  setTimeout(loadVoices,2000);
+}
+initTTS();
 if("serviceWorker" in navigator){window.addEventListener("load",function(){navigator.serviceWorker.register("sw.js").then(()=>{}).catch(()=>{});});}
 
 /* PWA 全环境安装引导 */
